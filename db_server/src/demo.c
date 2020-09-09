@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "request.h"
+#include "../lib/request.h"
 
 int main(int argc, char* argv[]) {
 
