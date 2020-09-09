@@ -1,6 +1,7 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 #pragma GCC visibility push(default)
+#include <string.h>
 
 #define RT_CREATE   0
 #define RT_TABLES   1
@@ -37,7 +38,7 @@ struct column_t {
 
 struct request_t {
     /* type of the request */
-    char request_type;
+    char* request_type;
     /* name of the table this request is for */
     char* table_name;
     /* columns for which this request is for */
@@ -60,13 +61,24 @@ struct request_t {
  *         request_string is replaced with error message
  * */
 request_t* parse_request(char* request_string){
-	if((!String.IsNullorEmpty(request_string))&& (request_string[0] == (char)34) && (request_string[request_string.Length-1] == (char) 34)) {
-	printf("Hello world");
-}
-else {
-	printf("You suck");
-} 
 
+//printf("%s\n", token);
+
+/*while (token != NULL) {
+if(strcmp(token, "test")) {
+printf("%s\n", "hej");
+}
+	printf("%s\n", token);
+	token = strtok(NULL, " ");		
+}*/
+FILE *pFile;
+
+pFile = fopen("test.txt", "w");
+fprintf(pFile,"%s", request_string);
+
+fclose(pFile);
+
+system("/home/seclab/database/test_C_code/action.sh");
 
 };
 /*
@@ -74,7 +86,10 @@ else {
  * -----------------------
  * prints the information contained in the provided request_t
  * */
-void print_request(request_t* request);
+void print_request(request_t* request){
+//system("/home/seclab/database/test_C_code/print.sh");
+
+};
 /*
  * Function: destroy_request
  * -------------------------
