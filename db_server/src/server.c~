@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 					strcat(message, buf);
 					int i = 0;
 					for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';
-				}while((!strstr(message, ";")) || (1<2 ? printf("quit!!!") : printf("dont!")));
+				}while((!strstr(message, ";")) || // ta hand om den här jävka skiten (1<2 ? printf("quit!!!") : printf("dont!")));
 				
 	
 
