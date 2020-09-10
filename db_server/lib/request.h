@@ -2,6 +2,8 @@
 #define REQUEST_H
 #pragma GCC visibility push(default)
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define RT_CREATE   0
 #define RT_TABLES   1
@@ -61,22 +63,46 @@ struct request_t {
  *         request_string is replaced with error message
  * */
 request_t* parse_request(char* request_string){
+int i = 0;
+int j = 0;
+int ctr = 0;
 
-//printf("%s\n", token);
+//char delimit[]="\n' '";
+int length = strlen(request_string); // Length of the input string
+char buf[length]; // Array for the input string
+char buf2[100][100];
+for (i=0; i < length; i++) {
+	buf[i] = request_string[i];
+} // Put the string into an array
 
-/*while (token != NULL) {
-if(strcmp(token, "test")) {
-printf("%s\n", "hej");
+for (i=0; i < length; i++) {
+	if(buf[i]==' ' || buf[i]=='\0' || buf[i]=='\n') {
+	buf2[ctr][j]='\0';
+	ctr++;
+	j=0;
+	}
+	else {
+	buf2[ctr][j]=buf[i];
+	j++;
+	}
 }
-	printf("%s\n", token);
-	token = strtok(NULL, " ");		
-}*/
-FILE *pFile;
 
-pFile = fopen("test.txt", "w");
-fprintf(pFile,"%s", request_string);
+char* filename;
+//memcpy(filename, buf2[2], sizeof(buf2[2]));
+printf("%s\n", filename);
+char* extension = ".txt";
+//char fullfile[strlen(filename)+strlen(extension)+1];
+//snprintf( fullfile, sizeof( fullfile ), "%s%s", filename, extension); // Make the filename able to be opened
 
-fclose(pFile);
+//char* token = strtok(request_string, delimit); 
+//int ret = strcmp(token, "CREATE"); // Check if first word is CREATE
+//int file;
+
+//if(buf2[0] == "CREATE"/*ret == 0*/) { // Creates the file if the first with is CREATE
+//file = open(fullfile, O_CREAT | O_RDWR);
+//write(file, buf, length);
+//close(file);
+//}
 
 };
 /*
@@ -85,7 +111,6 @@ fclose(pFile);
  * prints the information contained in the provided request_t
  * */
 void print_request(request_t* request){
-//system("/home/seclab/database/test_C_code/print.sh");
 
 };
 /*
