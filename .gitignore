@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# Duplicates
+*.~
+
 # Object files
 *.o
 *.ko
