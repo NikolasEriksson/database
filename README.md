@@ -9,3 +9,8 @@ Zombieprocess info: geeksforgeeks har bra info om hur man gör.
 
 
 Database in C code with telnet client server
+
+
+#TODO server side
+* add semaphores or some way of control flow.
+* make sure to close the main socket.
