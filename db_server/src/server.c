@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <sys/errno.h>
 #include <arpa/inet.h>
-
+#include <stdbool.h>
 
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
@@ -51,8 +51,9 @@ int main(int argc, char* argv[]) {
 	addrlen = sizeof(pin);
 	int pid;
 	char message[255];
-
-
+	bool isQuit=false;
+	bool showTables=false;
+	bool showSchema=false;
 	while(1){
 		// accept connection
 		int new = accept(sd, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
@@ -72,25 +73,36 @@ int main(int argc, char* argv[]) {
 		}else if(pid == 0){			
 			while(1){		
 			        // receive at most sizeof(buf) many bytes and store them in the buffer */
-				do {
-					//int i = 0;
-					//for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';				
+				int test=0;
+				do {			
 					if(recv(new, buf, sizeof(buf), 0) == -1) {
 						DIE("recv");
 					}
 					strcat(message, buf);
+					// check if the buffer contains the different commands that will have to be executed instantly
+					isQuit = strstr(buf, ".quit") 	    ? true : false;
+					showTables = strstr(buf, ".tables") ? true : false;
+					showSchema = strstr(buf, ".schema") ? true : false;
 					int i = 0;
 					for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';
-				}while((!strstr(message, ";")) || // ta hand om den här jävka skiten (1<2 ? printf("quit!!!") : printf("dont!")));
+				}while(!strstr(message, ";") && (!isQuit) && (!showTables) && (!showSchema));
 				
-	
+				/*  should use strcmp for these statements, strstr checks substring, i.e. .tables123 = valid  */ 
 
-
+				// if the buffer (and message) contained ".quit"
 				if(strstr(message, ".quit") != NULL){
 					close(new);
 					break;	
 				}
-				
+				// if the buffer (and message) contained ".tables"
+				if(strstr(message, ".tables") != NULL){
+					//printf("showing all tables");
+					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
+				}
+				// if the buffer (and message) contained ".schema"
+				if(strstr(message, ".schema") != NULL){
+					send(new, "showing all schemas\n", strlen("showing all schemas\n") + 1, 0);
+				}
 				char ipAddress[INET_ADDRSTRLEN];
 
 				/* convert IP address of communication partner to string */
@@ -99,28 +111,18 @@ int main(int argc, char* argv[]) {
 				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
 
 
-				// clean the buffer, strange chars will appear in the server console otherwise.
+				// clean all buffers, strange chars will appear in the server console otherwise.
 				fflush(stdout);
 				fflush(stdin);
 				int i = 0;
 				for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';
-				for(i = 0; i < sizeof(message)/sizeof(char); i++) message[i] = '\0';			
-				
-
-				//send(new, createTable, strlen(createTable)+1, 0);
-
-					/*if(strstr(buf, ".quit") != NULL){
-						//send(new, bye, strlen(bye) + 1, 0);
-						close(new);
-						break;
-					}*/
+				for(i = 0; i < sizeof(message)/sizeof(char); i++) message[i] = '\0';
 			}
 		}
 	}
-
+	/* The close for sd never happens, this should be fixed to avoid leaks or open ports etc. */ 
         /* close the file descriptors 
          * NOTE: shutdown() might be a better alternative */
-	close(sd_current);
 	close(sd);
 	exit(0);
 }
