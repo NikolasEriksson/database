@@ -1,7 +1,6 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 #pragma GCC visibility push(default)
-#include <string.h>
 
 #define RT_CREATE   0
 #define RT_TABLES   1
@@ -61,22 +60,13 @@ struct request_t {
  *         request_string is replaced with error message
  * */
 request_t* parse_request(char* request_string){
-
-//printf("%s\n", token);
-
-/*while (token != NULL) {
-if(strcmp(token, "test")) {
-printf("%s\n", "hej");
+	if((!String.IsNullorEmpty(request_string))&& (request_string[0] == (char)34) && (request_string[request_string.Length-1] == (char) 34)) {
+	printf("Hello world");
 }
-	printf("%s\n", token);
-	token = strtok(NULL, " ");		
-}*/
-FILE *pFile;
+else {
+	printf("You suck");
+} 
 
-pFile = fopen("test.txt", "w");
-fprintf(pFile,"%s", request_string);
-
-fclose(pFile);
 
 };
 /*
@@ -84,10 +74,7 @@ fclose(pFile);
  * -----------------------
  * prints the information contained in the provided request_t
  * */
-void print_request(request_t* request){
-//system("/home/seclab/database/test_C_code/print.sh");
-
-};
+void print_request(request_t* request);
 /*
  * Function: destroy_request
  * -------------------------
