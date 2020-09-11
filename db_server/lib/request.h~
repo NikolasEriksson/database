@@ -66,11 +66,12 @@ request_t* parse_request(char* request_string){
 int i = 0;
 int j = 0;
 int ctr = 0;
+request_t req;
 
-//char delimit[]="\n' '";
+char delimit[]="\n' '";
 int length = strlen(request_string); // Length of the input string
 char buf[length]; // Array for the input string
-char buf2[100][100];
+char buf2[100][100]; // Array that holds word for word
 for (i=0; i < length; i++) {
 	buf[i] = request_string[i];
 } // Put the string into an array
@@ -87,23 +88,27 @@ for (i=0; i < length; i++) {
 	}
 }
 
-char* filename;
-//memcpy(filename, buf2[2], sizeof(buf2[2]));
-//printf("%s\n", filename);
+char* filename = buf2[2];
 char* extension = ".txt";
-//char fullfile[strlen(filename)+strlen(extension)+1];
-//snprintf( fullfile, sizeof( fullfile ), "%s%s", filename, extension); // Make the filename able to be opened
+char fullfile[strlen(filename)+strlen(extension)+1];
+snprintf( fullfile, sizeof( fullfile ), "%s%s", filename, extension); // Make the filename able to be opened
 
-//char* token = strtok(request_string, delimit); 
-//int ret = strcmp(token, "CREATE"); // Check if first word is CREATE
-//int file;
+char* token = strtok(request_string, delimit); 
+int ret = strcmp(token, "CREATE"); // Check if first word is CREATE
+int file;
 
-//if(buf2[0] == "CREATE"/*ret == 0*/) { // Creates the file if the first with is CREATE
-//file = open(fullfile, O_CREAT | O_RDWR);
-//write(file, buf, length);
-//close(file);
-//}
+if(ret == 0) { // Creates the file if the first with is CREATE
+file = open(fullfile, O_CREAT | O_RDWR);
+write(file, buf, length);
+close(file);
+}
 
+//req->request_type = "CREATE";
+//printf("%s", req->request_type);
+req.table_name = buf2[2];
+printf("%s", req.table_name),
+
+//return req;
 };
 /*
  * Function: print_request
@@ -111,7 +116,8 @@ char* extension = ".txt";
  * prints the information contained in the provided request_t
  * */
 void print_request(request_t* request){
-
+	//printf("%s", request->request_type);
+	//printf("%s", request->table_name);
 };
 /*
  * Function: destroy_request
