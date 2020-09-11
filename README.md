@@ -14,3 +14,4 @@ Database in C code with telnet client server
 #TODO server side
 * add semaphores or some way of control flow.
 * make sure to close the main socket.
+* zombieprocess checker and killer in server(?) code.

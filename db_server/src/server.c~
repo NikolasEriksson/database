@@ -54,16 +54,19 @@ int main(int argc, char* argv[]) {
 	bool isQuit=false;
 	bool showTables=false;
 	bool showSchema=false;
+	int numberOfConnections=0;
+	int new;
 	while(1){
 		// accept connection
-		int new = accept(sd, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
+
+		new = accept(sd, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
+
 		// clean the buffer, strange chars will appear in the server console otherwise.
 		fflush(stdout);
 		int i = 0;				
 		for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';				
 		for(i = 0; i < sizeof(message)/sizeof(char); i++) message[i] = '\0';
-
-		if((pid = fork()) == -1){	
+		if((pid = fork()) == -1){
 			close(new);
 			close(sd);
 			continue;
@@ -72,43 +75,48 @@ int main(int argc, char* argv[]) {
 			continue;		
 		}else if(pid == 0){			
 			while(1){		
-			        // receive at most sizeof(buf) many bytes and store them in the buffer */
-				int test=0;
-				do {			
-					if(recv(new, buf, sizeof(buf), 0) == -1) {
+				do {
+				        // receive at most sizeof(buf) many bytes and store them in the buffer */
+					if(recv(new, buf, sizeof(buf), 0) == -1) { 
 						DIE("recv");
 					}
+					int x = 0;		
+					for(x = 0; x < strlen(buf); x++){ // this loop checks for NL and CR in the buffer and replaces them with			
+						if(buf[x] == 0xD/*13*/) buf[x] = 32; // space
+						if(buf[x] == 0xA/*10*/) buf[x] = 0; // null
+					}	// in order to get a nice string to process
 					strcat(message, buf);
-					isQuit = strstr(buf, ".quit") 	    ? true : false;
-					showTables = strstr(buf, ".tables") ? true : false;
-					showSchema = strstr(buf, ".schema") ? true : false;
+
+					// check if the buffer contains the different commands that will have to be executed instantly (no need for ;)
+					isQuit = strcmp(buf, ".quit ") == 0  ? true : false;
+					showTables = strstr(buf, ".tables ") ? true : false;
+					showSchema = strstr(buf, ".schema ") ? true : false;
 					int i = 0;
-					for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';
+					for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0'; // clear the buffer
 				}while(!strstr(message, ";") && (!isQuit) && (!showTables) && (!showSchema));
 				
-				/*  should use strcmp for these statements, strstr checks substring, i.e. .tables123 = valid  */ 
-
-				// if the buffer (and message) contained ".quit"
-				if(strstr(message, ".quit") != NULL){
-					close(new);
-					break;	
-				}
-				// if the buffer (and message) contained ".tables"
-				if(strstr(message, ".tables") != NULL){
-					//printf("showing all tables");
-					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
-				}
-				// if the buffer (and message) contained ".schema"
-				if(strstr(message, ".schema") != NULL){
-					send(new, "showing all schemas\n", strlen("showing all schemas\n") + 1, 0);
-				}
 				char ipAddress[INET_ADDRSTRLEN];
 
 				/* convert IP address of communication partner to string */
 				inet_ntop(AF_INET, &pin.sin_addr, ipAddress, sizeof(ipAddress));
+				
+				if(isQuit){
+					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
+					numberOfConnections-=1;
+					printf("clients--\n");
+					shutdown(new, SHUT_RDWR); // shutdoooown
+					break;	
+				}
+				// if the buffer contained ".tables"
+				if(showTables){
+					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
+				}
+				// if the buffer contained ".schema"
+				if(showSchema){
+					send(new, "showing all schemas\n", strlen("showing all schemas\n") + 1, 0);
+				}
 
 				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
-
 
 				// clean all buffers, strange chars will appear in the server console otherwise.
 				fflush(stdout);
