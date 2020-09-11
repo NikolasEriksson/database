@@ -63,7 +63,7 @@ if(fileexists(fullfile2) == 0) {
 				if (current->data_type == 0) {
 					fprintf(table_schema, "INT");
 				} else {
-					fprintf(table_schema, "VARCHAR(%i)\n", current->char_size);
+					fprintf(table_schema, "VARCHAR(%i)", current->char_size);
 				}
 					fprintf(table_schema, "\n");
 					current = current->next;
