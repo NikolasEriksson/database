@@ -120,7 +120,16 @@ int main(int argc, char* argv[]) {
 				}
 
 				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
-				parse_request(message);
+
+				request_t *request;
+				request = parse_request(message);
+				destroy_request(request);
+
+
+
+				puts("after parse");
+
+
 				// clean all buffers, strange chars will appear in the server console otherwise.
 				fflush(stdout);
 				fflush(stdin);
