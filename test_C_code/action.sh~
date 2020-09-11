@@ -1,8 +1,0 @@
-#!/bin/bash
-FILENAME="test.txt"
-
-skapa=`awk '{print $1}' $FILENAME`
-
-if [[ $1 == 'CREATE' ]]; then 
-echo "Hello"
-fi
