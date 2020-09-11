@@ -89,27 +89,35 @@ for (i=0; i < length; i++) {
 	}
 }
 
+char* path = "..//..//";
 char* filename = buf2[2];
-char* extension = ".txt";
-char fullfile[strlen(filename)+strlen(extension)+1];
-snprintf( fullfile, sizeof( fullfile ), "%s%s", filename, extension); // Make the filename able to be opened
+char* extension = "_table.txt";
+char* extension2 = "_contents.txt";
+char fullfile[strlen(path)+strlen(filename)+strlen(extension)+1];
+char fullfile2[strlen(path)+strlen(filename)+strlen(extension2)+1];
+snprintf( fullfile, sizeof( fullfile ), "%s%s%s", path, filename, extension); // File for the table
+snprintf( fullfile2, sizeof( fullfile2 ), "%s%s%s", path, filename, extension2); // File for the contents of the table
+
 
 char* token = strtok(request_string, delimit); 
 int ret = strcmp(token, "CREATE"); // Check if first word is CREATE
 int file;
-
+int file2;
 
 
 if(ret == 0) { // Creates the file if the first with is CREATE
 file = open(fullfile, O_CREAT | O_RDWR);
+file2 = open(fullfile2, O_CREAT | O_RDWR);
 write(file, buf, length);
+write(file2, "test", 4);
 close(file);
+close(file2);
 }
 
-req->request_type = "CREATE";
-printf("%s", req->request_type);
-req->table_name = buf2[2];
-printf("%s", req->table_name);
+//req->request_type = "CREATE";
+//printf("%s", req->request_type);
+//req->table_name = buf2[2];
+//printf("%s", req->table_name);
 
 
 
