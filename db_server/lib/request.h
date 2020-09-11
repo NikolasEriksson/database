@@ -63,6 +63,8 @@ struct request_t {
  *         request_string is replaced with error message
  * */
 request_t* parse_request(char* request_string){
+puts("in request.h");
+
 int i = 0;
 int j = 0;
 int ctr = 0;

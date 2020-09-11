@@ -10,6 +10,9 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
+// for request lib
+#include "../lib/request.h"
+
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
 
@@ -117,7 +120,7 @@ int main(int argc, char* argv[]) {
 				}
 
 				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
-
+				parse_request(message);
 				// clean all buffers, strange chars will appear in the server console otherwise.
 				fflush(stdout);
 				fflush(stdin);
