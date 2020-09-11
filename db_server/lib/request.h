@@ -108,8 +108,8 @@ close(file);
 
 req->request_type = "CREATE";
 printf("%s", req->request_type);
-req.table_name = buf2[2];
-printf("%s", req.table_name);
+req->table_name = buf2[2];
+printf("%s", req->table_name);
 
 
 

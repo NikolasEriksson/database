@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 			close(new);
 			continue;		
 		}else if(pid == 0){			
-			while(1){		
+			while(1){
 				do {
 				        // receive at most sizeof(buf) many bytes and store them in the buffer */
 					if(recv(new, buf, sizeof(buf), 0) == -1) { 
@@ -124,10 +124,6 @@ int main(int argc, char* argv[]) {
 				request_t *request;
 				request = parse_request(message);
 				destroy_request(request);
-
-
-
-				puts("after parse");
 
 
 				// clean all buffers, strange chars will appear in the server console otherwise.
