@@ -1,3 +1,7 @@
+# ignore without extension
+/home/seclab/Desktop/database/db_server/src/server
+/home/seclab/Desktop/database/db_server/src/demo
+
 # Prerequisites
 *.d
 
