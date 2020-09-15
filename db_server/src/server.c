@@ -12,6 +12,8 @@
 
 // for request lib
 #include "../lib/request.h"
+// for input/output (db)
+#include "io.h"
 
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
@@ -20,16 +22,32 @@
 int main(int argc, char* argv[]) {
 	int portnumber;
 	struct sockaddr_in sin, pin;
-	int sd, sd_current;
+	int sd;//, sd_current;
 	int addrlen;
 	char buf[BUFSIZE];
-
-	if(argc != 2) {
-		fprintf(stderr, "Usage: %s <port>\n", argv[0]);
+	
+	if(argc < 2 || argc > 3) {
+		fprintf(stderr, "Usage: %s -p <port>\n", argv[0]);
 		exit(-1);
 	}
 
-	portnumber = atoi(argv[1]);
+	int i;
+	for(i=0; i < argc; i++){
+		if(strcmp(argv[i], "-h") == 0){
+			printf("Usage: %s -p <port>\n", argv[0]);
+			puts("-h print help text.");
+			puts("-p listen to port number <port>.");
+			exit(0);
+			//puts("-d run as a daemon.\n");
+			//puts("-l logfile, log to logfile. If unspecified, logging will be output to syslog.\n");
+		}else if(strcmp(argv[i], "-p") == 0){
+			if(argv[i+1] != NULL) portnumber = atoi(argv[i+1]);
+			else{
+				printf("Usage: %s -p <port>\n", argv[0]);
+				exit(0);
+			}
+		}
+	}
 
         /* get a file descriptor for an IPv4 socket using TCP */
 	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -49,8 +67,8 @@ int main(int argc, char* argv[]) {
 	if(bind(sd, (struct sockaddr*) &sin, sizeof(sin)) == -1) {
 		DIE("bind");
 	}
-
 	listen(sd, 10);
+	//shutdown(sd, SHUT_RDWR);
 	addrlen = sizeof(pin);
 	int pid;
 	char message[255];
@@ -113,16 +131,30 @@ int main(int argc, char* argv[]) {
 				// if the buffer contained ".tables"
 				if(showTables){
 					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
+					request_t *request;
+					request = parse_request(message);
+					destroy_request(request);
 				}
 				// if the buffer contained ".schema"
 				if(showSchema){
 					send(new, "showing all schemas\n", strlen("showing all schemas\n") + 1, 0);
+					request_t *request;
+					request = parse_request(message);
+					print_request(request);
+					destroy_request(request);
 				}
 
 				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
 
 				request_t *request;
 				request = parse_request(message);
+				
+				puts("\nAFTER PARSING THE REQUEST\n");
+				//printf("request type:%c", request->request_type);
+				printf("table name:%s\n", request->table_name);
+				printf("column name:%s\n", request->columns->name);
+				printf("column name:%s\n", request->columns->next->name);
+
 				destroy_request(request);
 
 
