@@ -11,7 +11,7 @@ LIBRARY_PATH = db_server/lib/
 LDFLAGS = -L$(LIBRARY_PATH) -lrequest
 SRCS = $(SRC_DIR)/server.c
 OBJS = $(OBJ_DIR)/server.o
-SHARED = request_shared
+SHARED = server
 RM = /bin/rm
 
 

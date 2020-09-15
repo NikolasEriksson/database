@@ -11,9 +11,9 @@
 #include <stdbool.h>
 
 // for request lib
-#include "../lib/request.h"
+#include "../include/request.h"
 // for input/output (db)
-#include "io.h"
+#include "../include/io.h"
 
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
