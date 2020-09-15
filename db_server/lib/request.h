@@ -62,7 +62,9 @@ struct request_t {
  * errors: returns NULL in case of error
  *         request_string is replaced with error message
  * */
+
 request_t* parse_request(char* request_string);
+
 /*
  * Function: print_request
  * -----------------------
