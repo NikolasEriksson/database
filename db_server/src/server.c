@@ -101,58 +101,50 @@ int main(int argc, char* argv[]) {
 					if(recv(new, buf, sizeof(buf), 0) == -1) { 
 						DIE("recv");
 					}
-					int x = 0;		
-					for(x = 0; x < strlen(buf); x++){ // this loop checks for NL and CR in the buffer and replaces them with			
-						if(buf[x] == 0xD/*13*/) buf[x] = 32; // space
-						if(buf[x] == 0xA/*10*/) buf[x] = 0; // null
-					}	// in order to get a nice string to process
+
 					strcat(message, buf);
 
-					// check if the buffer contains the different commands that will have to be executed instantly (no need for ;)
-					isQuit = strcmp(buf, ".quit ") == 0  ? true : false;
-					showTables = strstr(buf, ".tables ") ? true : false;
-					showSchema = strstr(buf, ".schema ") ? true : false;
+					// check if the buffer contains the different commands that will have to be executed instantly ( no need for ; )
+					isQuit = strstr(buf, ".quit")	    ? true : false;
+					showTables = strstr(buf, ".tables") ? true : false;
+					showSchema = strstr(buf, ".schema") ? true : false;
 					int i = 0;
 					for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0'; // clear the buffer
 				}while(!strstr(message, ";") && (!isQuit) && (!showTables) && (!showSchema));
 				
-				char ipAddress[INET_ADDRSTRLEN];
-
 				/* convert IP address of communication partner to string */
+				char ipAddress[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET, &pin.sin_addr, ipAddress, sizeof(ipAddress));
+				
+				// print the message to server terminal
+				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
+
+				// create the request and parse it
+				request_t *request;
+				request = parse_request(message);
 				
 				if(isQuit){
 					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
 					numberOfConnections-=1;
 					printf("clients--\n");
+					destroy_request(request);
 					shutdown(new, SHUT_RDWR); // shutdoooown
 					break;	
-				}
-				// if the buffer contained ".tables"
-				if(showTables){
+				}else if(showTables){
 					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
-					request_t *request;
-					request = parse_request(message);
-					destroy_request(request);
-				}
-				// if the buffer contained ".schema"
-				if(showSchema){
-					send(new, "showing all schemas\n", strlen("showing all schemas\n") + 1, 0);
-					request_t *request;
-					request = parse_request(message);
 					print_request(request);
-					destroy_request(request);
+			
+				}else if(showSchema){
+					send(new, "showing schema\n", strlen("showing schema\n") + 1, 0);
+					print_request(request);
+				}else{
+					
+					print_request(request);
+	
+
 				}
-
-				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
-
-				request_t *request;
-				request = parse_request(message);
-				create_table(request);
-				print_request(request);
+				// DESTROY the request
 				destroy_request(request);
-
-
 				// clean all buffers, strange chars will appear in the server console otherwise.
 				fflush(stdout);
 				fflush(stdin);
