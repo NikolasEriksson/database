@@ -64,7 +64,6 @@ struct request_t {
  * */
 
 request_t* parse_request(char* request_string);
-
 /*
  * Function: print_request
  * -----------------------
