@@ -14,8 +14,8 @@ int main(int argc, char* argv[]) {
 
     request = parse_request(argv[1]);
 
-    print_request(request);
+    //print_request(request);
 
-    destroy_request(request);
+    //destroy_request(request);
 
 }

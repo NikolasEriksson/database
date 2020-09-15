@@ -40,7 +40,7 @@ struct column_t {
 
 struct request_t {
     /* type of the request */
-    char* request_type;
+    char request_type;
     /* name of the table this request is for */
     char* table_name;
     /* columns for which this request is for */
@@ -62,87 +62,20 @@ struct request_t {
  * errors: returns NULL in case of error
  *         request_string is replaced with error message
  * */
-request_t* parse_request(char* request_string){
-
-int i = 0;
-int j = 0;
-int ctr = 0;
-request_t* req = malloc(2024);
-
-char delimit[]="\n' '";
-int length = strlen(request_string); // Length of the input string
-char buf[length]; // Array for the input string
-char buf2[100][100]; // Array that holds word for word
-for (i=0; i < length; i++) {
-	buf[i] = request_string[i];
-} // Put the string into an array
-
-for (i=0; i < length; i++) {
-	if(buf[i]==' ' || buf[i]=='\0' || buf[i]=='\n') {
-	buf2[ctr][j]='\0';
-	ctr++;
-	j=0;
-	}
-	else {
-	buf2[ctr][j]=buf[i];
-	j++;
-	}
-}
-
-char* path = "..//..//";
-char* filename = buf2[2];
-char* extension = "_table.txt";
-char* extension2 = "_contents.txt";
-char fullfile[strlen(path)+strlen(filename)+strlen(extension)+1];
-char fullfile2[strlen(path)+strlen(filename)+strlen(extension2)+1];
-snprintf( fullfile, sizeof( fullfile ), "%s%s%s", path, filename, extension); // File for the table
-snprintf( fullfile2, sizeof( fullfile2 ), "%s%s%s", path, filename, extension2); // File for the contents of the table
-
-
-char* token = strtok(request_string, delimit); 
-int ret = strcmp(token, "CREATE"); // Check if first word is CREATE
-int file;
-int file2;
-
-
-if(ret == 0) { // Creates the file if the first with is CREATE
-file = open(fullfile, O_CREAT | O_RDWR);
-file2 = open(fullfile2, O_CREAT | O_RDWR);
-write(file, buf, length);
-write(file2, "test", 4);
-close(file);
-close(file2);
-}
-
-//req->request_type = "CREATE";
-//printf("%s", req->request_type);
-//req->table_name = buf2[2];
-//printf("%s", req->table_name);
-
-
-
-
-return req;
-};
+request_t* parse_request(char* request_string);
 /*
  * Function: print_request
  * -----------------------
  * prints the information contained in the provided request_t
  * */
-void print_request(request_t* request){
-	//printf("%s", request->request_type);
-	//printf("%s", request->table_name);
-};
+void print_request(request_t* request);
 /*
  * Function: destroy_request
  * -------------------------
  * frees all memory associated with the provided request_t
  * including the request_t itself
  * */
-void destroy_request(request_t* request){
-	//destroy(request);
-
-}
+void destroy_request(request_t* request);
 
 #pragma GCC visibility pop
 #endif

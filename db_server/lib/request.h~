@@ -78,7 +78,7 @@ for (i=0; i < length; i++) {
 } // Put the string into an array
 
 for (i=0; i < length; i++) {
-	if(buf[i]==' ' || buf[i]=='\0' || buf[i]=='\n') {
+	if(buf[i]==' ' || buf[i]=='\0' || buf[i]=='\n' || buf[i]==',' || buf[i]=='(' || buf[i]==')' || buf[i]==';') {
 	buf2[ctr][j]='\0';
 	ctr++;
 	j=0;
@@ -88,39 +88,51 @@ for (i=0; i < length; i++) {
 	j++;
 	}
 }
+/*printf("%s\n", buf2[3]);
+printf("%s\n", buf2[4]);
+printf("%s\n", buf2[5]);
+printf("%s\n", buf2[6]);
+printf("%s\n", buf2[7]);
+printf("%s\n", buf2[8]);
+printf("%s\n", buf2[9]);
+*/
 
+req->columns->name = "hej";
+
+/*FILE* all_tables;
+FILE* table_schema;
+FILE* table_content;
 char* path = "..//..//";
 char* filename = buf2[2];
-char* extension = "_table.txt";
-char* extension2 = "_contents.txt";
-char fullfile[strlen(path)+strlen(filename)+strlen(extension)+1];
+char* extension = "_tables.txt";
+char* extension2 = "_table.txt";
+char* extension3 = "_contents.txt";
+char fullfile[strlen(path)+strlen("all")+strlen(extension)+1];
 char fullfile2[strlen(path)+strlen(filename)+strlen(extension2)+1];
-snprintf( fullfile, sizeof( fullfile ), "%s%s", filename, extension); // File for the table
-snprintf( fullfile2, sizeof( fullfile2 ), "%s%s", filename, extension2); // File for the contents of the table
-
+char fullfile3[strlen(path)+strlen(filename)+strlen(extension3)+1];
+snprintf( fullfile, sizeof( fullfile ), "%s%s%s", path, "all", extension); // File for all tables
+snprintf( fullfile2, sizeof( fullfile2 ), "%s%s%s", path, filename, extension2); // File for the table schema
+snprintf( fullfile3, sizeof( fullfile3 ), "%s%s%s", path, filename, extension3); // File for the contents of the table
 
 char* token = strtok(request_string, delimit); 
 int ret = strcmp(token, "CREATE"); // Check if first word is CREATE
-int file;
-int file2;
-
 
 if(ret == 0) { // Creates the file if the first with is CREATE
-file = open(fullfile, O_CREAT | O_RDWR);
-file2 = open(fullfile2, O_CREAT | O_RDWR);
-write(file, buf, length);
-write(file2, "test", 4);
-close(file);
-close(file2);
-}
+req->request_type = buf2[0];
+req->table_name = buf2[2];
 
-//req->request_type = "CREATE";
-//printf("%s", req->request_type);
-//req->table_name = buf2[2];
-//printf("%s", req->table_name);
+all_tables = fopen(fullfile, "a");
+table_schema = fopen(fullfile2, "w");
+table_content = fopen(fullfile3, "w");
 
+fputs(buf2[2], all_tables);
+fputs("\n", all_tables);
+fprintf(table_schema, "%s", buf);
 
-
+fclose(all_tables);
+fclose(table_schema);
+fclose(table_content);
+}*/
 
 return req;
 };
