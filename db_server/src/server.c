@@ -148,12 +148,13 @@ int main(int argc, char* argv[]) {
 
 				request_t *request;
 				request = parse_request(message);
-				
-				puts("\nAFTER PARSING THE REQUEST\n");
+				//print_request(message);
+				/*puts("\nAFTER PARSING THE REQUEST\n");
 				//printf("request type:%c", request->request_type);
 				printf("table name:%s\n", request->table_name);
 				printf("column name:%s\n", request->columns->name);
 				printf("column name:%s\n", request->columns->next->name);
+				*/
 
 				destroy_request(request);
 
