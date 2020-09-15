@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
 
 				request_t *request;
 				request = parse_request(message);
-				create_table(request);
+				//create_table(request);
 				print_request(request);
 				destroy_request(request);
 
