@@ -7,15 +7,18 @@ FILE* all_tables;
 FILE* table_schema;
 FILE* table_content;
 char* filename = request->table_name;
+char* path = "database//";
+char* path2 = "database//Table_schema";
+char* path3 = "database//Table_contents";
 char* extension = "all_tables.txt";
 char* extension2 = "_table_schema.txt";
 char* extension3 = "_table_contents.txt";
-char fullfile[strlen("all")+strlen(extension)+1];
-char fullfile2[strlen(filename)+strlen(extension2)+1];
-char fullfile3[strlen(filename)+strlen(extension3)+1];
-snprintf( fullfile, sizeof( fullfile ), "%s" , extension); // File for all tables
-snprintf( fullfile2, sizeof( fullfile2 ), "%s%s", filename, extension2); // File for the table schema
-snprintf( fullfile3, sizeof( fullfile3 ), "%s%s", filename, extension3); // File for the contents of the table
+char fullfile[strlen(path)+strlen(extension)+1];
+char fullfile2[strlen(path2)+strlen(filename)+strlen(extension2)+1];
+char fullfile3[strlen(path3)+strlen(filename)+strlen(extension3)+1];
+snprintf( fullfile, sizeof( fullfile ), "%s%s", path, extension); // File for all tables
+snprintf( fullfile2, sizeof( fullfile2 ), "%s%s%s", path2, filename, extension2); // File for the table schema
+snprintf( fullfile3, sizeof( fullfile3 ), "%s%s%s", path3, filename, extension3); // File for the contents of the table
 
 all_tables = fopen(fullfile, "a");
 table_schema = fopen(fullfile2, "w");
