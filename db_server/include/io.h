@@ -77,6 +77,7 @@ if(fileexists(fullfile2) == 0) {
 }
 
 char* insert(request_t *request) {
+
 FILE* table_content;
 char* filename = malloc(sizeof(char)*255);
 memset(filename, 0, sizeof filename);
@@ -102,11 +103,33 @@ if(fileexists(filename) == 1) {
 	}
 	return "Table does not exist\n";
 }
-/*
-void select(request_t *request) {
 
+char* select_values(request_t *request) {
+
+FILE* table_content;
+char line[255];
+char* ret = malloc(sizeof(char)*255);
+memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
+char* filename = malloc(sizeof(char)*255);
+memset(filename, 0, sizeof filename);
+strcat(filename, "database/Table_contents/");
+strcat(filename, request->table_name);
+strcat(filename, "_table_contents.txt");
+
+	if(fileexists(filename) == 1) {
+		table_content = fopen(filename, "r");
+		while(fgets(line, sizeof(line), table_content) != NULL){ // read each line of the provided file in the file variable
+			strcat(ret, line);
+		}
+		fclose(table_content);
+		free(filename);
+		free(ret);		
+		return ret;
+	}
+	return "Table does not exist\n";
 }
 
+/*
 void drop_table(request_t *request) {
 
 }

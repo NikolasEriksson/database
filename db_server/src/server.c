@@ -156,6 +156,10 @@ int main(int argc, char* argv[]) {
 					returnVal = insert(request);
 					send(new, returnVal, strlen(returnVal)+1, 0);
 					}
+					if(request->request_type == 5) {
+					returnVal = select_values(request);
+					send(new, returnVal, strlen(returnVal)+1, 0);
+					}
 
 				}
 				// DESTROY the request
