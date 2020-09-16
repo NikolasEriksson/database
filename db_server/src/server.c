@@ -139,7 +139,10 @@ int main(int argc, char* argv[]) {
 					break;
 				}else if(showTables){
 					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
-					print_request(request);
+					char* allTables = all_tables();
+					send(new, allTables, strlen(allTables) + 1, 0);
+					//printf("%s", allTables);			
+					//print_request(request);
 			
 				}else if(showSchema){
 					send(new, "showing schema\n", strlen("showing schema\n") + 1, 0);
@@ -147,7 +150,6 @@ int main(int argc, char* argv[]) {
 				}else{
 
 					if(request->request_type == 0) create_table(request);
-					#if(request->request_type == 4) INSERT(request);
 
 				}
 				// DESTROY the request
