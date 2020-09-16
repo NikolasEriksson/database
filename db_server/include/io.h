@@ -5,6 +5,8 @@
 #include "request.h"
 #include <dirent.h> // list all files in a dir
 
+#include <unistd.h>
+
 int fileexists(const char* filename) {
 FILE *file;
 	if((file = fopen(filename, "r"))) {
@@ -84,11 +86,57 @@ void insert(request_t *request) {
 void select(request_t *request) {
 
 }
-
-void drop_table(request_t *request) {
-
-}
 */
+
+char* drop_table(request_t *request) {
+	char* fileName = malloc(sizeof(char)*255);
+	fileName = "database/all_tables.txt"; 
+	char* tempFileName = malloc(sizeof(char)*255);
+	tempFileName = "database/all_tables_TEMP.txt"; 
+
+	FILE* file = fopen(fileName, "r");
+	FILE* tempFile = fopen(tempFileName, "a");
+	
+	if (file == NULL || tempFile == NULL) exit(EXIT_FAILURE);
+	char* line = malloc(sizeof(char)*255);
+
+	char* pos;
+	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
+		if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
+		if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
+			fprintf(tempFile, "%s\n", line);
+			fflush(tempFile);
+		}
+	}
+	
+	fclose(file);
+	fclose(tempFile);
+/*
+	tempFile = fopen(tempFileName, "r"); // to remove the space in between the table names
+	tempFile_again = fopen("database/all_tables_TEMP_again.txt", "w");
+	char ch;
+	while(fgets(line, sizeof(line), tempFile) != NULL){ // read each line of the provided file in the file variable
+		do{
+			ch=*(line++);
+			if( ch == ' ') { }
+			else{
+				fprintf(tempFile_again, "%s\n", line);
+				fflush(tempFile_again);
+			}
+		}while(ch != '\0');
+	}
+*/
+
+	remove(fileName);
+	rename(tempFileName, fileName);
+/*	
+	free(fileName);
+	free(tempFileName);
+	free(line);
+	*/
+	return "abc";
+}
+
 
 char* all_tables() {
 	FILE* file = fopen("database/all_tables.txt", "r");
@@ -127,7 +175,5 @@ char* table_schema(request_t *request) {
 	free(ret);
 	return ret;
 }
-
-// create table, insert into table, select from table, drop table
 
 #endif
