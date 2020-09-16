@@ -116,21 +116,40 @@ char* all_tables() {
 	FILE* file = fopen("database/all_tables.txt", "r");
 	if (file == NULL) exit(EXIT_FAILURE);
 	char line[255];
-	char ret[255];
-	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
+	char* ret = malloc(sizeof(char)*255);
+	memset(ret, 0, sizeof ret);
 	
 	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
-		printf("%s", line);
 		strcat(ret, line);
 	}
 	fclose(file);
+	free(ret);
 	return ret;
 }
-/*
-void table_schema(request_t *request) {
 
+
+char* table_schema(request_t *request) {
+	char* fileName = malloc(sizeof(char)*255);
+	memset(fileName, 0, sizeof fileName);
+	strcat(fileName, "database/Table_schema/");	
+ 	strcat(fileName, request->table_name);
+	strcat(fileName, "_table_schema.txt");
+	printf("reading from %s\n", fileName);
+	FILE* file = fopen(fileName, "r");
+	if (file == NULL) exit(EXIT_FAILURE);
+	char line[255];
+	char* ret = malloc(sizeof(char)*255);
+	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
+	
+	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
+		strcat(ret, line);
+	}
+	fclose(file);
+	free(fileName);
+	free(ret);
+	return ret;
 }
-*/
+
 // create table, insert into table, select from table, drop table
 
 #endif

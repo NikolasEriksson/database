@@ -141,12 +141,10 @@ int main(int argc, char* argv[]) {
 					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
 					char* allTables = all_tables();
 					send(new, allTables, strlen(allTables) + 1, 0);
-					//printf("%s", allTables);			
-					//print_request(request);
-			
 				}else if(showSchema){
-					send(new, "showing schema\n", strlen("showing schema\n") + 1, 0);
-					print_request(request);
+					send(new, "showing schema for table\n", strlen("showing schema for table\n") + 1, 0);
+					char* returnSchema = table_schema(request);
+					send(new, returnSchema, strlen(returnSchema) + 1, 0);
 				}else{
 
 					char* returnVal;
