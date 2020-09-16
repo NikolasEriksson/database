@@ -25,6 +25,14 @@ int main(int argc, char* argv[]) {
 	int sd;//, sd_current;
 	int addrlen;
 	char buf[BUFSIZE];
+	char* noCommand = "No such command. Connect and try again.\n";
+	int pid;
+	char message[255];
+	bool isQuit=false;
+	bool showTables=false;
+	bool showSchema=false;
+	int numberOfConnections=0;
+	int new;
 
 	if(argc < 2 || argc > 3) {
 		fprintf(stderr, "Usage: %s -p <port>\n", argv[0]);
@@ -48,6 +56,7 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
+
 	printf("Server started\n------\n");
 	printf("Port: %i\n", portnumber);
 	puts("Request handeling method: Fork");
@@ -74,14 +83,7 @@ int main(int argc, char* argv[]) {
 	listen(sd, 2);
 	//shutdown(sd, SHUT_RDWR);
 	addrlen = sizeof(pin);
-	char* noCommand = "No such command. Connect and try again.\n";
-	int pid;
-	char message[255];
-	bool isQuit=false;
-	bool showTables=false;
-	bool showSchema=false;
-	int numberOfConnections=0;
-	int new;
+
 	while(1){
 		// accept connection
 
@@ -134,7 +136,7 @@ int main(int argc, char* argv[]) {
 					numberOfConnections-=1;
 					destroy_request(request);
 					shutdown(new, SHUT_RDWR); // shutdoooown
-					break;	
+					break;
 				}else if(showTables){
 					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
 					print_request(request);
@@ -143,7 +145,9 @@ int main(int argc, char* argv[]) {
 					send(new, "showing schema\n", strlen("showing schema\n") + 1, 0);
 					print_request(request);
 				}else{
-					//print_request(request);
+
+					if(request->request_type == 0) create_table(request);
+					#if(request->request_type == 4) INSERT(request);
 
 				}
 				// DESTROY the request
