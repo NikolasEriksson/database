@@ -148,6 +148,7 @@ int main(int argc, char* argv[]) {
 				}else{
 
 					char* returnVal;
+
 					if(request->request_type == 0){	
 						returnVal = create_table(request);
 						send(new, returnVal, strlen(returnVal)+1, 0);
@@ -157,8 +158,12 @@ int main(int argc, char* argv[]) {
 						send(new, returnVal, strlen(returnVal)+1, 0);
 					}
 					if(request->request_type == 4){			
-						//returnVal = insert(request);
-						//send(new, returnVal, strlen(returnVal)+1, 0);
+						returnVal = insert(request);
+						send(new, returnVal, strlen(returnVal)+1, 0);
+					}
+					if(request->request_type == 5) {
+						returnVal = select_values(request);
+						send(new, returnVal, strlen(returnVal)+1, 0);
 					}
 					
 				}
