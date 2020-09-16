@@ -145,9 +145,10 @@ int main(int argc, char* argv[]) {
 					send(new, "showing schema\n", strlen("showing schema\n") + 1, 0);
 					print_request(request);
 				}else{
-
-					if(request->request_type == 0) create_table(request);
-					#if(request->request_type == 4) INSERT(request);
+					char* returnVal;
+					if(request->request_type == 0) returnVal = create_table(request);
+					send(new, returnVal, strlen(returnVal)+1, 0);
+					//if(request->request_type == 4) INSERT(request);
 
 				}
 				// DESTROY the request
