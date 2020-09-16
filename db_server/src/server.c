@@ -150,10 +150,14 @@ int main(int argc, char* argv[]) {
 				}else{
 
 					char* returnVal;
-					if(request->request_type == 0) returnVal = create_table(request);
+					if(request->request_type == 0) {
+					returnVal = create_table(request);
 					send(new, returnVal, strlen(returnVal)+1, 0);
-					//if(request->request_type == 4) INSERT(request);
-
+					}
+					if(request->request_type == 4) {
+					returnVal = insert(request);
+					send(new, returnVal, strlen(returnVal)+1, 0);
+					}
 
 				}
 				// DESTROY the request
