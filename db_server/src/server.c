@@ -20,17 +20,17 @@
 
 
 int main(int argc, char* argv[]) {
-	int portnumber;
+	int portnumber = 1337; // default port
 	struct sockaddr_in sin, pin;
 	int sd;//, sd_current;
 	int addrlen;
 	char buf[BUFSIZE];
-	
+
 	if(argc < 2 || argc > 3) {
 		fprintf(stderr, "Usage: %s -p <port>\n", argv[0]);
 		exit(-1);
 	}
-
+	
 	int i;
 	for(i=0; i < argc; i++){
 		if(strcmp(argv[i], "-h") == 0){
@@ -48,6 +48,10 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
+	printf("Server started\n------\n");
+	printf("Port: %i\n", portnumber);
+	puts("Request handeling method: Fork");
+	puts("------");
 
         /* get a file descriptor for an IPv4 socket using TCP */
 	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -67,9 +71,10 @@ int main(int argc, char* argv[]) {
 	if(bind(sd, (struct sockaddr*) &sin, sizeof(sin)) == -1) {
 		DIE("bind");
 	}
-	listen(sd, 10);
+	listen(sd, 2);
 	//shutdown(sd, SHUT_RDWR);
 	addrlen = sizeof(pin);
+	char* noCommand = "No such command. Connect and try again.\n";
 	int pid;
 	char message[255];
 	bool isQuit=false;
@@ -93,8 +98,8 @@ int main(int argc, char* argv[]) {
 			continue;
 		}else if(pid > 0){
 			close(new);
-			continue;		
-		}else if(pid == 0){			
+			continue;
+		}else if(pid == 0){	
 			while(1){
 				do {
 				        // receive at most sizeof(buf) many bytes and store them in the buffer */
@@ -122,11 +127,11 @@ int main(int argc, char* argv[]) {
 				// create the request and parse it
 				request_t *request;
 				request = parse_request(message);
-				
+				if(!request) send(new, noCommand, strlen(noCommand) + 1, 0);				
+
 				if(isQuit){
 					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
 					numberOfConnections-=1;
-					printf("clients--\n");
 					destroy_request(request);
 					shutdown(new, SHUT_RDWR); // shutdoooown
 					break;	
@@ -138,9 +143,7 @@ int main(int argc, char* argv[]) {
 					send(new, "showing schema\n", strlen("showing schema\n") + 1, 0);
 					print_request(request);
 				}else{
-					
-					print_request(request);
-	
+					//print_request(request);
 
 				}
 				// DESTROY the request
