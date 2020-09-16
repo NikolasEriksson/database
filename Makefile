@@ -24,8 +24,6 @@ shared: $(SHARED)
 
 # build executable, which is dynamically linked
 $(SHARED): $(OBJS)
-	# this needs to be manually written into each new console in order to make the program find librequest.so
-	#export LD_LIBRARY_PATH=/home/seclab/Desktop/database/db_server/lib:$LD_LIBRARY_PATH
 	$(LD) $(OBJS) $(LDFLAGS) -o $(SHARED)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
