@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "request.h"
 #include <dirent.h> // list all files in a dir
-
+#include <stdbool.h>
 #include <unistd.h>
 
 int fileexists(const char* filename) {
@@ -132,50 +132,53 @@ strcat(filename, "_table_contents.txt");
 }
 
 
-void drop_table(request_t *request) {
-
-
+char* drop_table(request_t *request) {
+	char* fileName = "database/all_tables.txt";
+	char* tempFileName = "database/all_tables_temp.txt";
 	FILE* file = fopen(fileName, "r");
 	FILE* tempFile = fopen(tempFileName, "a");
+	char* line = malloc(sizeof(char)*255);
+	char* pos;
+	bool found = false;
 	
 	if (file == NULL || tempFile == NULL) exit(EXIT_FAILURE);
-	char* line = malloc(sizeof(char)*255);
+	if (tempFile == NULL || tempFile == NULL) exit(EXIT_FAILURE);
 
-	char* pos;
 	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
 		if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
 		if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
 			fprintf(tempFile, "%s\n", line);
 			fflush(tempFile);
+		}else{
+			found = true;		
 		}
 	}
 	
 	fclose(file);
 	fclose(tempFile);
-/*
-	tempFile = fopen(tempFileName, "r"); // to remove the space in between the table names
-	tempFile_again = fopen("database/all_tables_TEMP_again.txt", "w");
-	char ch;
-	while(fgets(line, sizeof(line), tempFile) != NULL){ // read each line of the provided file in the file variable
-		do{
-			ch=*(line++);
-			if( ch == ' ') { }
-			else{
-				fprintf(tempFile_again, "%s\n", line);
-				fflush(tempFile_again);
-			}
-		}while(ch != '\0');
-	}
-*/
 
 	remove(fileName);
 	rename(tempFileName, fileName);
-/*	
-	free(fileName);
-	free(tempFileName);
-	free(line);
-	*/
-	return "abc";
+	if(found){
+		char* first = malloc(sizeof(char)*255);
+		memset(first, 0, sizeof first);
+		strcat(first, "database/Table_contents/");
+		strcat(first, request->table_name);
+		strcat(first, "_table_contents.txt");
+
+		char* second = malloc(sizeof(char)*255);
+		memset(second, 0, sizeof second);
+		strcat(second, "database/Table_schema/");
+		strcat(second, request->table_name);
+		strcat(second, "_table_schema.txt");
+		printf("%s\%s\n", first, second);
+		remove(first);
+		remove(second);
+		free(first);
+		free(second);
+	}
+
+	return found ? "Table dropped\n" : "No such table\n";
 }
 
 
@@ -203,10 +206,12 @@ char* table_schema(request_t *request) {
 	strcat(fileName, "_table_schema.txt");
 	printf("reading from %s\n", fileName);
 	FILE* file = fopen(fileName, "r");
-	if (file == NULL) exit(EXIT_FAILURE);
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
+
+	if (file == NULL) exit(EXIT_FAILURE);
+
 	
 	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
 		strcat(ret, line);
