@@ -160,24 +160,26 @@ int main(int argc, char* argv[]) {
 				}else{
 
 					char* returnVal;
-
-					if(request->request_type == 0){	
-						returnVal = create_table(request);
-						send(new, returnVal, strlen(returnVal)+1, 0);
+					switch(request->request_type){
+						case RT_CREATE:
+							returnVal = create_table(request);
+							send(new, returnVal, strlen(returnVal)+1, 0);
+							break;
+						case RT_DROP:
+							returnVal = drop_table(request);
+							send(new, returnVal, strlen(returnVal)+1, 0);
+							break;
+						case RT_INSERT:
+							returnVal = insert(request);
+							send(new, returnVal, strlen(returnVal)+1, 0);
+							break;
+						case RT_SELECT:
+							returnVal = select_values(request);
+							send(new, returnVal, strlen(returnVal)+1, 0);
+							break;
+						default:
+							break;
 					}
-					if(request->request_type == 3){			
-						returnVal = drop_table(request);
-						send(new, returnVal, strlen(returnVal)+1, 0);
-					}
-					if(request->request_type == 4){			
-						returnVal = insert(request);
-						send(new, returnVal, strlen(returnVal)+1, 0);
-					}
-					if(request->request_type == 5) {
-						returnVal = select_values(request);
-						send(new, returnVal, strlen(returnVal)+1, 0);
-					}
-					
 				}
 				// DESTROY the request
 				destroy_request(request);

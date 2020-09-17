@@ -171,7 +171,7 @@ char* drop_table(request_t *request) {
 		strcat(second, "database/Table_schema/");
 		strcat(second, request->table_name);
 		strcat(second, "_table_schema.txt");
-		printf("%s\%s\n", first, second);
+
 		remove(first);
 		remove(second);
 		free(first);
