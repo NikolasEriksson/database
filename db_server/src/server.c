@@ -16,10 +16,29 @@
 #include "../include/io.h"
 
 
-
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
 
+// THIS WORKS 
+#include <termios.h>
+struct termios stdin_orig;
+
+void term_reset(){
+	tcsetattr(STDIN_FILENO,TCSANOW,&stdin_orig);
+	tcsetattr(STDIN_FILENO,TCSAFLUSH,&stdin_orig);
+}
+
+void term_nonblocking(){
+	struct termios newt;
+	tcgetattr(STDIN_FILENO, &stdin_orig);
+	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+	newt = stdin_orig;
+	newt.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+	atexit(term_reset);
+}
+//
 
 int main(int argc, char* argv[]) {
 	int portnumber = 1337; // default port
@@ -35,7 +54,8 @@ int main(int argc, char* argv[]) {
 	bool showSchema=false;
 	int numberOfConnections=0;
 	int new;
-
+	term_nonblocking();
+	
 
 	if(argc < 2 || argc > 3) {
 		fprintf(stderr, "Usage: %s -p <port>\n", argv[0]);
@@ -69,6 +89,10 @@ int main(int argc, char* argv[]) {
 	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		DIE("socket");
 	}
+
+	int option = 1;
+	setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+
         /* zero out the sockaddr_in struct */
 	memset(&sin, 0, sizeof(sin));
         /* setup the struct to inform the operating system that we would like
@@ -77,6 +101,8 @@ int main(int argc, char* argv[]) {
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = INADDR_ANY;
 	sin.sin_port = htons(portnumber);
+
+
 
         /* perform bind call */
 	if(bind(sd, (struct sockaddr*) &sin, sizeof(sin)) == -1){
@@ -92,27 +118,33 @@ int main(int argc, char* argv[]) {
 		* have a thread look for input in server terminal, when quit/exit/.q/.quit is found,
 		  break the loop and shutdown then close the fd.
 
-*/
+*/	
+
 
 	while(1){
 		// accept connection
+		int test = getchar();
+		if(test>0) {
+			puts("exit");
+			exit(0);
+		}
 		new = accept(sd, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
-
+		
 		// clean the buffer, strange chars will appear in the server console otherwise.
 		fflush(stdout);
 		int i = 0;
 		for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';		// memset instead?		
 		for(i = 0; i < sizeof(message)/sizeof(char); i++) message[i] = '\0';	// memset instead?
 		if((pid = fork()) == -1){
-			//shutdown(new); # test this
-			//shutdown(sd);	 # test this
 			close(new);
 			close(sd);
 			continue;
 		}else if(pid > 0){
+			puts("2222");
 			close(new);
 			continue;
-		}else if(pid == 0){	
+		}else if(pid == 0){
+			puts("3333");
 			while(1){
 				do {
 				        // receive at most sizeof(buf) many bytes and store them in the buffer */
@@ -195,6 +227,9 @@ int main(int argc, char* argv[]) {
 	/* The close for sd never happens, this should be fixed to avoid leaks or open ports etc. */ 
         /* close the file descriptors 
          * NOTE: shutdown() might be a better alternative */
+	puts("SHUTDOWN");
+	
+	shutdown(sd, SHUT_RDWR);
 	close(sd);
 	exit(0);
 }
