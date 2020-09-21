@@ -24,6 +24,10 @@ FILE* all_tables;
 FILE* table_schema;
 FILE* table_content;
 
+// Return value
+char* ret = malloc(sizeof(char)*255);
+memset(ret, 0, sizeof ret);
+
 // Filename taken from the table name
 char* filename = request->table_name;
 
@@ -74,10 +78,12 @@ if(fileexists(fullfile2) == 0) {
 	fclose(table_schema);
 	fclose(table_content);
 	fclose(all_tables);
-	return "Succesfully created\n";
+	ret = "Succesfully created\n";
+	} else {
+		ret = "Table already exists\n";
 	}
 
-	return "Table already exists\n";
+	return ret;
 }
 
 char* insert(request_t *request) {
@@ -93,19 +99,30 @@ memset(ret, 0, sizeof ret);
 
 if(fileexists(filename) == 1) {
 	table_content = fopen(filename, "a");
-		column_t *current = request->columns; 
-		//Loop through all columns and add column name and type + char_size	
-		while(current != NULL) {
-			if (current->data_type == 0) {
-				fprintf(table_content, "%i\t", current->int_val);
-			} else {
-				fprintf(table_content, "%s\t", current->char_val);
-			}
-				current = current->next;
+	struct flock lock;
+	memset(&lock, 0, sizeof(lock));
+	lock.l_type = F_WRLCK;
+	int test1 = fcntl(fileno(table_content), F_SETLK, &lock);
+	
+		if(test1 != -1) {
+			column_t *current = request->columns; 
+			//Loop through all columns and add column name and type + char_size	
+			while(current != NULL) {
+				if (current->data_type == 0) {
+					fprintf(table_content, "%i\t", current->int_val);
+				} else {
+					fprintf(table_content, "%s\t", current->char_val);
+				}
+					current = current->next;
+			}  
+		} else {
+			insert(request);
 		}
 		fprintf(table_content, "\n");
-	fclose(table_content);
-	ret = "Successfully updated\n";
+		lock.l_type = F_UNLCK;
+		fcntl(fileno(table_content), F_SETLK, &lock);
+		fclose(table_content);
+		ret = "Successfully updated\n";
 	} else {
 		ret = "Table does not exist\n";
 	}
