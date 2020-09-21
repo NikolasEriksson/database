@@ -250,15 +250,16 @@ char* all_tables() {
 
 
 char* table_schema(request_t *request) {
-	char* fileName = malloc(sizeof(char)*255);
-	memset(fileName, 0, sizeof fileName);
-	strcat(fileName, "database/Table_schema/");	
- 	strcat(fileName, request->table_name);
+	char fileName[255] = "database/Table_schema/";
+	strcat(fileName, request->table_name);
 	strcat(fileName, "_table_schema.txt");
+	FILE* table_schema = fopen(fileName, "r");
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
-	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
-	
+	//memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
+
+	//if (tables_schema == NULL) exit(EXIT_FAILURE);
+
 	if (fileexists(fileName) == 1) {
 		FILE* table_schema = fopen(fileName, "r");
 		while(fgets(line, sizeof(line), table_schema) != NULL){ // read each line of the provided file in the file variable
@@ -268,6 +269,8 @@ char* table_schema(request_t *request) {
 	} else {
 		ret = "Table does not exist";
 	}
+
+	fclose(table_schema);
 
 	return ret;
 }
