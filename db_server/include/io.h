@@ -88,6 +88,8 @@ memset(filename, 0, sizeof filename);
 strcat(filename, "database/Table_contents/");
 strcat(filename, request->table_name);
 strcat(filename, "_table_contents.txt");
+char* ret = malloc(sizeof(char)*255);
+memset(ret, 0, sizeof ret);
 
 if(fileexists(filename) == 1) {
 	table_content = fopen(filename, "a");
@@ -103,9 +105,11 @@ if(fileexists(filename) == 1) {
 		}
 		fprintf(table_content, "\n");
 	fclose(table_content);
-	return "Successfully updated\n";
+	ret = "Successfully updated\n";
+	} else {
+		ret = "Table does not exist\n";
 	}
-	return "Table does not exist\n";
+	return ret;
 }
 
 char* select_values(request_t *request) {
