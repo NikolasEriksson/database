@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <sys/file.h>
+#include <fcntl.h>
 
 int fileexists(const char* filename) {
 FILE *file;
@@ -18,6 +19,10 @@ FILE *file;
 }
 
 char* create_table(request_t *request) {
+	char* tempFileName = "database/all_tables_temp.txt";
+	FILE* tempFile = fopen(tempFileName, "w");
+	fclose(tempFile);
+
 // File pointers to the file to be created
 FILE* all_tables;
 FILE* table_schema;
@@ -74,7 +79,7 @@ if(fileexists(fullfile2) == 0) {
 	fclose(table_content);
 	fclose(all_tables);
 	return "Succesfully created\n";
-	} 
+	}
 
 	return "Table already exists\n";
 }
@@ -136,65 +141,102 @@ strcat(filename, "_table_contents.txt");
 char* drop_table(request_t *request) {
 	char* fileName = "database/all_tables.txt";
 	char* tempFileName = "database/all_tables_temp.txt";
-	FILE* all_tables = fopen(fileName, "r");
 	FILE* tempFile = fopen(tempFileName, "a");
-	
-	// 
-	if(file == NULL || tempFile == NULL) {
-		puts("nehedu");
-		exit(0);
-	}
-	
-	flock(fileno(file), LOCK_EX);
-	flock(fileno(tempFile), LOCK_EX);
-	sleep(10);
-	char* line = malloc(sizeof(char)*255);
-	char* pos;
-	bool found = false;
-	
-	if (all_tables == NULL || tempFile == NULL) exit(EXIT_FAILURE);
-	if (tempFile == NULL || tempFile == NULL) exit(EXIT_FAILURE);
+	FILE* all_tables = fopen(fileName, "r");
+	bool found = false;	
 
-	while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
-		if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
-		if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
-			fprintf(tempFile, "%s\n", line);
-			fflush(tempFile);
-		}else{
-			found = true;		
+	struct flock lock;
+	struct flock lock_2;
+
+	lock.l_type = F_WRLCK | F_RDLCK;
+	lock_2.l_type = F_RDLCK;
+	
+	lock_2.l_start = 0;
+	lock_2.l_whence = SEEK_SET;
+	lock_2.l_len = 0;
+	
+	sleep(3);
+	int test1 = fcntl(fileno(tempFile), F_SETLK, &lock);
+
+	int test2 = fcntl(fileno(all_tables), F_SETLK, &lock_2);
+
+	printf("%i", fcntl(fileno(all_tables), F_GETLK, &lock_2));
+
+	printf("test1: %i, test2: %i\n", test1, test2);	
+	
+	if(test1 != -1 && test2 != -1){
+		sleep(10);
+
+		char* line = malloc(sizeof(char)*255);
+		char* pos;
+
+		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
+			if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
+			if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
+				fprintf(tempFile, "%s\n", line);
+				fflush(tempFile);
+			}else{
+				found = true;
+			 	puts("TABLE EXISTED");
+			}
 		}
-	}
 	
-	fclose(all_tables);
-	fclose(tempFile);
+		if(found){
+			char* first = malloc(sizeof(char)*255);
+			memset(first, 0, sizeof first);
+			strcat(first, "database/Table_contents/");
+			strcat(first, request->table_name);
+			strcat(first, "_table_contents.txt");
 
-	flock(fileno(file), LOCK_UN);	
-	flock(fileno(tempFile), LOCK_UN);
+			char* second = malloc(sizeof(char)*255);
+			memset(second, 0, sizeof second);
+			strcat(second, "database/Table_schema/");
+			strcat(second, request->table_name);
+			strcat(second, "_table_schema.txt");
 
-	remove(fileName);
-	rename(tempFileName, fileName);
+			remove(first);
+			remove(second);
+			free(first);
+			free(second);
+			remove(fileName);
+			rename(tempFileName, fileName);
+			
+			lock.l_type = F_UNLCK;
+			lock_2.l_type = F_UNLCK;
 
+	lock_2.l_start = 0;
+	lock_2.l_whence = SEEK_SET;
+	lock_2.l_len = 0;
 
-	if(found){
-		char* first = malloc(sizeof(char)*255);
-		memset(first, 0, sizeof first);
-		strcat(first, "database/Table_contents/");
-		strcat(first, request->table_name);
-		strcat(first, "_table_contents.txt");
+			fcntl(fileno(tempFile), F_SETLK, &lock);
+			fcntl(fileno(all_tables), F_SETLK, &lock_2);
+			return "Table dropped\n";
+			puts("unlocked in found");
+			fclose(all_tables);
+			fclose(tempFile);
+			
+		}
 
-		char* second = malloc(sizeof(char)*255);
-		memset(second, 0, sizeof second);
-		strcat(second, "database/Table_schema/");
-		strcat(second, request->table_name);
-		strcat(second, "_table_schema.txt");
+		lock.l_type = F_UNLCK;
+		lock_2.l_type = F_UNLCK;
 
-		remove(first);
-		remove(second);
-		free(first);
-		free(second);
+	lock_2.l_start = 0;
+	lock_2.l_whence = SEEK_SET;
+	lock_2.l_len = 0;
+
+		fcntl(fileno(tempFile), F_SETLK, &lock);
+		fcntl(fileno(all_tables), F_SETLK, &lock_2);
+		puts("unlocked outside of found");
+		fclose(all_tables);
+		fclose(tempFile);
+	}else{
+		sleep(1);
+		puts("rec");
+		drop_table(request);
 	}
 
-	return found ? "Table dropped\n" : "No such table\n";
+
+	return "No such table\n";
 }
 
 
@@ -226,7 +268,7 @@ char* table_schema(request_t *request) {
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
 
-	if (tables_schema == NULL) exit(EXIT_FAILURE);
+	//if (tables_schema == NULL) exit(EXIT_FAILURE);
 
 	
 	while(fgets(line, sizeof(line), table_schema) != NULL){ // read each line of the provided file in the file variable
