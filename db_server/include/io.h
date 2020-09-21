@@ -19,66 +19,80 @@ FILE *file;
 }
 
 char* create_table(request_t *request) {
-// File pointers to the file to be created
-FILE* all_tables;
-FILE* table_schema;
-FILE* table_content;
+	
+	// File pointers to the file to be created
+	FILE* all_tables;
+	FILE* table_schema;
+	FILE* table_content;
 
-// Return value
-char* ret = malloc(sizeof(char)*255);
-memset(ret, 0, sizeof ret);
+	// Return value
+	char* ret = malloc(sizeof(char)*255);
+	memset(ret, 0, sizeof ret);
 
-// Filename taken from the table name
-char* filename = request->table_name;
 
-// Path to the folder
-char* path = "database//";
-char* path2 = "database//Table_schema//";
-char* path3 = "database//Table_contents//";
+	char* filename = request->table_name; // Filename taken from the table name
 
-// Extension to make them with correct name
-char* extension = "all_tables.txt";
-char* extension2 = "_table_schema.txt";
-char* extension3 = "_table_contents.txt";
+	// Path to the folder
+	char* path = "database//";
+	char* path2 = "database//Table_schema//";
+	char* path3 = "database//Table_contents//";
 
-// Get correct size of full path filename
-char fullfile[strlen(path)+strlen(extension)+1];
-char fullfile2[strlen(path2)+strlen(filename)+strlen(extension2)+1];
-char fullfile3[strlen(path3)+strlen(filename)+strlen(extension3)+1];
+	// Extension to make them with correct name
+	char* extension = "all_tables.txt";
+	char* extension2 = "_table_schema.txt";
+	char* extension3 = "_table_contents.txt";
 
-//Concat filenames
-snprintf( fullfile, sizeof( fullfile ), "%s%s", path, extension); // File for all tables
-snprintf( fullfile2, sizeof( fullfile2 ), "%s%s%s", path2, filename, extension2); // File for the table schema
-snprintf( fullfile3, sizeof( fullfile3 ), "%s%s%s", path3, filename, extension3); // File for the contents of the table
+	// Get correct size of full path filename
+	char fullfile[strlen(path)+strlen(extension)+1];
+	char fullfile2[strlen(path2)+strlen(filename)+strlen(extension2)+1];
+	char fullfile3[strlen(path3)+strlen(filename)+strlen(extension3)+1];
 
-//Check if the file exists
+	//Concat filenames
+	snprintf( fullfile, sizeof( fullfile ), "%s%s", path, extension); // File for all tables
+	snprintf( fullfile2, sizeof( fullfile2 ), "%s%s%s", path2, filename, extension2); // File for the table schema
+	snprintf( fullfile3, sizeof( fullfile3 ), "%s%s%s", path3, filename, extension3); // File for the contents of the table
 
-if(fileexists(fullfile2) == 0) {
-	//Open the files with correct filename
+
+	if(fileexists(fullfile2) == 0) { //Check if the file exists
+
 	all_tables = fopen(fullfile, "a");
-	table_schema = fopen(fullfile2, "w");
-	table_content = fopen(fullfile3, "w");
+	struct flock lock;
+	memset(&lock, 0, sizeof(lock));
+	lock.l_type = F_WRLCK;
+	int lock1 = fcntl(fileno(all_tables), F_SETLK, &lock);
 
-	//Print table name to to file
-	fprintf(all_tables, "%s\n", request->table_name);
-	//Set the first request column to be able to loop through 
-	column_t *current = request->columns; 
-			//Loop through all columns and add column name and type + char_size	
-			while(current != NULL) {
+		if(lock1 != -1) {
+			sleep(5);
+			table_schema = fopen(fullfile2, "w");
+			table_content = fopen(fullfile3, "w");
+			fprintf(all_tables, "%s\n", request->table_name); //Print table name to to file 
+			column_t *current = request->columns; //Set the first request column to be able to loop through 
+						
+			while(current != NULL) { //Loop through all columns and add column name and type + char_size
 				fprintf(table_schema, "%s\t", current->name);
+
 				if (current->data_type == 0) {
 					fprintf(table_schema, "INT");
-				} else {
-					fprintf(table_schema, "VARCHAR(%i)", current->char_size);
-				}
-					fprintf(table_schema, "\n");
-					current = current->next;
-				}
+					} else {
+						fprintf(table_schema, "VARCHAR(%i)", current->char_size);
+					}
+
+				fprintf(table_schema, "\n");
+				current = current->next;
+			}
 			
-	fclose(table_schema);
-	fclose(table_content);
-	fclose(all_tables);
-	ret = "Succesfully created\n";
+			lock.l_type = F_UNLCK;
+			fcntl(fileno(all_tables), F_SETLK, &lock);
+			fclose(table_schema);
+			fclose(table_content);
+			fclose(all_tables);
+			ret = "Succesfully created\n";	
+		} else {
+			sleep(1);
+			puts("File locked");
+			create_table(request);
+		}
+
 	} else {
 		ret = "Table already exists\n";
 	}
@@ -102,9 +116,9 @@ if(fileexists(filename) == 1) {
 	struct flock lock;
 	memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
-	int test1 = fcntl(fileno(table_content), F_SETLK, &lock);
+	int lock1 = fcntl(fileno(table_content), F_SETLK, &lock);
 	
-		if(test1 != -1) {
+		if(lock1 != -1) {
 			column_t *current = request->columns; 
 			//Loop through all columns and add column name and type + char_size	
 			while(current != NULL) {
