@@ -136,7 +136,7 @@ strcat(filename, "_table_contents.txt");
 char* drop_table(request_t *request) {
 	char* fileName = "database/all_tables.txt";
 	char* tempFileName = "database/all_tables_temp.txt";
-	FILE* file = fopen(fileName, "r");
+	FILE* all_tables = fopen(fileName, "r");
 	FILE* tempFile = fopen(tempFileName, "a");
 	
 	// 
@@ -152,10 +152,10 @@ char* drop_table(request_t *request) {
 	char* pos;
 	bool found = false;
 	
-	if (file == NULL || tempFile == NULL) exit(EXIT_FAILURE);
+	if (all_tables == NULL || tempFile == NULL) exit(EXIT_FAILURE);
 	if (tempFile == NULL || tempFile == NULL) exit(EXIT_FAILURE);
 
-	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
+	while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
 		if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
 		if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
 			fprintf(tempFile, "%s\n", line);
@@ -165,7 +165,7 @@ char* drop_table(request_t *request) {
 		}
 	}
 	
-	fclose(file);
+	fclose(all_tables);
 	fclose(tempFile);
 
 	flock(fileno(file), LOCK_UN);	
@@ -199,16 +199,16 @@ char* drop_table(request_t *request) {
 
 
 char* all_tables() {
-	FILE* file = fopen("database/all_tables.txt", "r");
-	if (file == NULL) exit(EXIT_FAILURE);
+	FILE* all_tables = fopen("database/all_tables.txt", "r");
+	if (all_tables == NULL) exit(EXIT_FAILURE);
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
 	
-	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
+	while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
 		strcat(ret, line);
 	}
-	fclose(file);
+	fclose(all_tables);
 	free(ret);
 	return ret;
 }
@@ -221,18 +221,18 @@ char* table_schema(request_t *request) {
  	strcat(fileName, request->table_name);
 	strcat(fileName, "_table_schema.txt");
 	printf("reading from %s\n", fileName);
-	FILE* file = fopen(fileName, "r");
+	FILE* table_schema = fopen(fileName, "r");
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
 
-	if (file == NULL) exit(EXIT_FAILURE);
+	if (tables_schema == NULL) exit(EXIT_FAILURE);
 
 	
-	while(fgets(line, sizeof(line), file) != NULL){ // read each line of the provided file in the file variable
+	while(fgets(line, sizeof(line), table_schema) != NULL){ // read each line of the provided file in the file variable
 		strcat(ret, line);
 	}
-	fclose(file);
+	fclose(table_schema);
 	free(fileName);
 	free(ret);
 	return ret;
