@@ -137,54 +137,27 @@ strcat(filename, "_table_contents.txt");
 char* drop_table(request_t *request) {
 	char* fileName = "database/all_tables.txt";
 	char* tempFileName = "database/all_tables_temp.txt";
-	int all_tables = open(fileName, O_RDONLY);
-	int tempFile = open(tempFileName, O_RDWR | O_CREAT);
+	FILE* all_tables = fopen(fileName, "r");
+	FILE* tempFile = fopen(tempFileName, "w");
 	bool found = false;
 	
 	struct flock lock;
 	memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
-	int test1 = fcntl(tempFile, F_SETLK, &lock);
+	int test1 = fcntl(fileno(tempFile), F_SETLK, &lock);
 
 	struct flock lock_2;
 	memset(&lock_2, 0, sizeof(lock_2));
 	lock_2.l_type = F_RDLCK;
-	int test2 = fcntl(all_tables, F_SETLK, &lock_2);
-	
-	sleep(3);
+	int test2 = fcntl(fileno(all_tables), F_SETLK, &lock_2);
 
 	printf("test1: %i, test2: %i\n", test1, test2);	
 	
-	if(test1 != -1 && test2 != -1){
-		sleep(10);
-		int fileread, i;
-		char buffert[128];
-		char* temp;
-
-		if(all_tables > 0) {
-			fileread = read(all_tables, buffert, sizeof(buffert));
-			printf("%s\n", buffert);
-			for(i=0; i < strlen(buffert); i++) {
-				if(buffert[i] == '\n') {
-					puts("linebreak");
-				} else {
-					temp = buffert[i];
-					strcat(temp, buffert[i]);
-				}
-				if(strcmp(temp, request->table_name != 0)) {
-					write(tempFile, buffert[i], fileread);				
-				} else { found = true; puts("Table existed");}
-			}
-			/*if(strcmp(*buf2[i], request->table_name) != 0) {
-			write(tempFile, buffert, fileread);
-			} else {
-				found = true;
-				puts("TABLE EXISTED");
-			}*/
-		}
-		//close(tempFile);	
 		
-		/*while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
+	if(test1 != -1 && test2 != -1){
+		char* line = malloc(sizeof(char)*255);
+		char* pos;
+		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
 			if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
 			if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
 				fprintf(tempFile, "%s\n", line);
@@ -193,7 +166,7 @@ char* drop_table(request_t *request) {
 				found = true;
 			 	puts("TABLE EXISTED");
 			}
-		}*/
+		}
 	
 		if(found){
 			char* first = malloc(sizeof(char)*255);
@@ -218,46 +191,51 @@ char* drop_table(request_t *request) {
 			lock.l_type = F_UNLCK;
 			lock_2.l_type = F_UNLCK;
 
-			fcntl(tempFile, F_SETLK, &lock);
-			fcntl(all_tables, F_SETLK, &lock_2);
-			return "Table dropped\n";
+			fcntl(fileno(tempFile), F_SETLK, &lock);
+			fcntl(fileno(all_tables), F_SETLK, &lock_2);
 			puts("unlocked in found");
-			close(all_tables);
-			close(tempFile);
+			fclose(all_tables);
+			fclose(tempFile);
+			return "Table dropped\n";
 			
 		}
 
 		lock.l_type = F_UNLCK;
 		lock_2.l_type = F_UNLCK;
 
-		fcntl(tempFile, F_SETLK, &lock);
-		fcntl(all_tables, F_SETLK, &lock_2);
+		fcntl(fileno(tempFile), F_SETLK, &lock);
+		fcntl(fileno(all_tables), F_SETLK, &lock_2);
 		puts("unlocked outside of found");
-		close(all_tables);
-		close(tempFile);
+		fclose(all_tables);
+		fclose(tempFile);
 	}else{
-		sleep(1);
-		puts("rec");
 		drop_table(request);
 	}
-
 
 	return "No such table\n";
 }
 
 
 char* all_tables() {
-	FILE* all_tables = fopen("database/all_tables.txt", "r");
-	if (all_tables == NULL) exit(EXIT_FAILURE);
+	char* fileName = "database/all_tables.txt";
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
-	
-	while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
-		strcat(ret, line);
+	FILE* all_tables = fopen(fileName, "r");
+	if (fileexists(fileName) == 1) {
+		fseek(all_tables, 0, SEEK_END);
+		if (ftell(all_tables) == 0) {
+			ret = "No tables";
+		}
+	} else if (fileexists(fileName) != 1) {
+			ret = "No tables";
+	} else {
+		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
+			strcat(ret, line);
+		}
 	}
-	fclose(all_tables);
-	free(ret);
+		fclose(all_tables);
+		//free(ret);
 	return ret;
 }
 
