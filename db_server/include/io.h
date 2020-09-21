@@ -6,6 +6,7 @@
 #include <dirent.h> // list all files in a dir
 #include <stdbool.h>
 #include <unistd.h>
+#include <sys/file.h>
 
 int fileexists(const char* filename) {
 FILE *file;
@@ -137,6 +138,16 @@ char* drop_table(request_t *request) {
 	char* tempFileName = "database/all_tables_temp.txt";
 	FILE* file = fopen(fileName, "r");
 	FILE* tempFile = fopen(tempFileName, "a");
+	
+	// 
+	if(file == NULL || tempFile == NULL) {
+		puts("nehedu");
+		exit(0);
+	}
+	
+	flock(fileno(file), LOCK_EX);
+	flock(fileno(tempFile), LOCK_EX);
+	sleep(10);
 	char* line = malloc(sizeof(char)*255);
 	char* pos;
 	bool found = false;
@@ -157,8 +168,13 @@ char* drop_table(request_t *request) {
 	fclose(file);
 	fclose(tempFile);
 
+	flock(fileno(file), LOCK_UN);	
+	flock(fileno(tempFile), LOCK_UN);
+
 	remove(fileName);
 	rename(tempFileName, fileName);
+
+
 	if(found){
 		char* first = malloc(sizeof(char)*255);
 		memset(first, 0, sizeof first);
