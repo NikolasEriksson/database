@@ -182,9 +182,13 @@ int main(int argc, char* argv[]) {
 					close(new);
 					break;
 				}else if(showTables){
-					send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
 					char* allTables = all_tables();
-					send(new, allTables, strlen(allTables) + 1, 0);
+					if(allTables != "No tables") {
+						send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
+						send(new, allTables, strlen(allTables) + 1, 0);
+					} else {
+						send(new, "No tables exists\n", strlen("No tables exists\n") + 1, 0);
+					}
 				}else if(showSchema){
 					send(new, "showing schema for table\n", strlen("showing schema for table\n") + 1, 0);
 					char* returnSchema = table_schema(request);
