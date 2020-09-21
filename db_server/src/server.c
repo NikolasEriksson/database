@@ -169,8 +169,13 @@ int main(int argc, char* argv[]) {
 				// create the request and parse it
 				request_t *request;
 				request = parse_request(message);
-				if(!request) send(new, noCommand, strlen(noCommand) + 1, 0);				
-
+				if(!request){
+					send(new, noCommand, strlen(noCommand) + 1, 0);	
+					free(request);			
+					shutdown(new, SHUT_RDWR); // shutdoooown
+					close(new);
+					exit(pid);
+				}
 				if(isQuit){
 					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
 					destroy_request(request);
@@ -203,6 +208,7 @@ int main(int argc, char* argv[]) {
 						case RT_CREATE:
 							returnVal = create_table(request);
 							send(new, returnVal, strlen(returnVal)+1, 0);
+							free(returnVal);
 							break;
 						case RT_DROP:
 							returnVal = drop_table(request);
@@ -212,10 +218,12 @@ int main(int argc, char* argv[]) {
 						case RT_INSERT:
 							returnVal = insert(request);
 							send(new, returnVal, strlen(returnVal)+1, 0);
+							free(returnVal);
 							break;
 						case RT_SELECT:
 							returnVal = select_values(request);
 							send(new, returnVal, strlen(returnVal)+1, 0);
+							free(returnVal);
 							break;
 						default:
 							break;
