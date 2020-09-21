@@ -30,9 +30,6 @@ char* create_table(request_t *request) {
 
 	char* filename = request->table_name; // Filename taken from the table name
 
-	// Filename taken from the table name
-	char* filename = request->table_name;
-
 	// Path to the folder
 	char* path = "database//";
 	char* path2 = "database//Table_schema//";
