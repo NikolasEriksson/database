@@ -228,11 +228,11 @@ char* all_tables() {
 			}	
 		fseek(all_tables, 0, SEEK_END);
 		if (ftell(all_tables) == 0) {
-			ret = "1";
+			ret = "empty";
 		}				
 		fclose(all_tables);
 	} else {
-		ret = "1";
+		ret = "empty";
 	}
 	
 	return ret;
