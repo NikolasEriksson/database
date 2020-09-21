@@ -246,7 +246,6 @@ char* table_schema(request_t *request) {
 	strcat(fileName, "database/Table_schema/");	
  	strcat(fileName, request->table_name);
 	strcat(fileName, "_table_schema.txt");
-	printf("reading from %s\n", fileName);
 	FILE* table_schema = fopen(fileName, "r");
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);

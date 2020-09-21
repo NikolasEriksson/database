@@ -14,7 +14,8 @@
 #include "../include/request.h"
 // for input/output (db)
 #include "../include/io.h"
-
+// for waitpid
+#include <sys/wait.h>
 
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
@@ -52,7 +53,7 @@ int main(int argc, char* argv[]) {
 	bool isQuit=false;
 	bool showTables=false;
 	bool showSchema=false;
-	int numberOfConnections=0;
+
 	int new;
 	term_nonblocking();
 	
@@ -102,8 +103,6 @@ int main(int argc, char* argv[]) {
 	sin.sin_addr.s_addr = INADDR_ANY;
 	sin.sin_port = htons(portnumber);
 
-
-
         /* perform bind call */
 	if(bind(sd, (struct sockaddr*) &sin, sizeof(sin)) == -1){
 		DIE("bind");
@@ -113,41 +112,40 @@ int main(int argc, char* argv[]) {
 	//shutdown(sd, SHUT_RDWR);
 	addrlen = sizeof(pin);
 
-/*
-	ideas to break out of loop and close the fd
-		* have a thread look for input in server terminal, when quit/exit/.q/.quit is found,
-		  break the loop and shutdown then close the fd.
-
-*/	
-
+	//int status = 1337;
 
 	while(1){
-		// accept connection
 		int test = getchar();
 		if(test>0) {
 			puts("exit");
 			exit(0);
 		}
+		// accept connection
 		new = accept(sd, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
 		
-		// clean the buffer, strange chars will appear in the server console otherwise.
-		fflush(stdout);
-		int i = 0;
-		for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0';		// memset instead?		
-		for(i = 0; i < sizeof(message)/sizeof(char); i++) message[i] = '\0';	// memset instead?
-		if((pid = fork()) == -1){
+		// clean the buffers, strange chars will appear in the server console otherwise.
+		memset(buf, 0, sizeof buf);
+		memset(message, 0, sizeof message);
+
+		if((pid = fork()) == -1){ // something went very wrong
 			close(new);
 			close(sd);
 			continue;
-		}else if(pid > 0){
-			puts("2222");
+		}else if(pid > 0){  // in parent process (when the child exits)	
+			puts("IN PARENT");
+			// TODO: fix this :)
+			/*if(waitpid(pid, &status, WNOHANG) != -1){
+				printf("Process %i terminated sucessfully\n", pid);
+			}else{
+				puts("Uh-Oh, couldn't terminate process..\n");
+			}*/
 			close(new);
 			continue;
-		}else if(pid == 0){
-			puts("3333");
+		}else if(pid == 0){ // in child process
+			puts("IN CHILD");
 			while(1){
-				do {
-				        // receive at most sizeof(buf) many bytes and store them in the buffer */
+				do {					        
+					// receive at most sizeof(buf) many bytes and store them in the buffer */
 					if(recv(new, buf, sizeof(buf), 0) == -1) { 
 						DIE("recv");
 					}
@@ -158,8 +156,7 @@ int main(int argc, char* argv[]) {
 					isQuit = strstr(buf, ".quit")	    ? true : false;
 					showTables = strstr(buf, ".tables") ? true : false;
 					showSchema = strstr(buf, ".schema") ? true : false;
-					int i = 0;
-					for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0'; // clear the buffer // memset instead?
+					// there was another memset here previosly, doesn't seem to be needed anymore
 				}while(!strstr(message, ";") && (!isQuit) && (!showTables) && (!showSchema));
 				
 				/* convert IP address of communication partner to string */
@@ -176,11 +173,11 @@ int main(int argc, char* argv[]) {
 
 				if(isQuit){
 					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
-					numberOfConnections-=1;
 					destroy_request(request);
 					shutdown(new, SHUT_RDWR); // shutdoooown
 					close(new);
-					break;
+					exit(pid);
+
 				}else if(showTables){
 					char* allTables = all_tables();
 					if(allTables != "No tables") {
@@ -217,14 +214,10 @@ int main(int argc, char* argv[]) {
 							break;
 					}
 				}
-				// DESTROY the request
-				destroy_request(request);
-				// clean all buffers, strange chars will appear in the server console otherwise.
-				fflush(stdout);
-				fflush(stdin);
-				int i = 0;
-				for(i = 0; i < sizeof(buf)/sizeof(char); i++) buf[i] = '\0'; // memset instead?
-				for(i = 0; i < sizeof(message)/sizeof(char); i++) message[i] = '\0'; // memset instead?
+				destroy_request(request); // DESTROY the request
+	
+				memset(buf, 0, sizeof buf);
+				memset(message, 0, sizeof message);
 			}
 		}
 	}
