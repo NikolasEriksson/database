@@ -186,14 +186,16 @@ int main(int argc, char* argv[]) {
 					} else {
 						send(new, "No tables exists\n", strlen("No tables exists\n") + 1, 0);
 					}
+					free(allTables);
 				}else if(showSchema){
 					char* returnSchema = table_schema(request);
 					if(strcmp(returnSchema, "Table does not exist") != 0) {					
-					send(new, "Showing schema for table\n", strlen("Showing schema for table\n") + 1, 0);
-					send(new, returnSchema, strlen(returnSchema) + 1, 0);
+						send(new, "Showing schema for table\n", strlen("Showing schema for table\n") + 1, 0);
+						send(new, returnSchema, strlen(returnSchema) + 1, 0);
 					} else {
 						send(new, "No such table exists\n", strlen("No such table exists\n") +1, 0);
 					}
+					free(returnSchema);
 				}else{
 
 					char* returnVal;
@@ -205,6 +207,7 @@ int main(int argc, char* argv[]) {
 						case RT_DROP:
 							returnVal = drop_table(request);
 							send(new, returnVal, strlen(returnVal)+1, 0);
+							free(returnVal);
 							break;
 						case RT_INSERT:
 							returnVal = insert(request);
