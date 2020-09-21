@@ -125,12 +125,15 @@ strcat(filename, "_table_contents.txt");
 		while(fgets(line, sizeof(line), table_content) != NULL){ // read each line of the provided file in the file variable
 			strcat(ret, line);
 		}
-		fclose(table_content);
-		free(filename);
-		free(ret);		
-		return ret;
+		fseek(table_content, 0, SEEK_END);
+		if (ftell(table_content) == 0) {
+			ret = "No entries in table\n";
+		}
+		fclose(table_content);		
+	} else {
+		ret = "Table does not exist\n";
 	}
-	return "Table does not exist\n";
+	return ret;
 }
 
 
@@ -140,6 +143,9 @@ char* drop_table(request_t *request) {
 	FILE* all_tables = fopen(fileName, "r");
 	FILE* tempFile = fopen(tempFileName, "w");
 	bool found = false;
+	char* ret = malloc(sizeof(char)*255);
+	memset(ret, 0, sizeof ret);
+	ret = "No such table\n";
 	
 	struct flock lock;
 	memset(&lock, 0, sizeof(lock));
@@ -155,6 +161,7 @@ char* drop_table(request_t *request) {
 	
 		
 	if(test1 != -1 && test2 != -1){
+		sleep(5);
 		char* line = malloc(sizeof(char)*255);
 		char* pos;
 		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
@@ -164,7 +171,6 @@ char* drop_table(request_t *request) {
 				fflush(tempFile);
 			}else{
 				found = true;
-			 	puts("TABLE EXISTED");
 			}
 		}
 	
@@ -193,26 +199,26 @@ char* drop_table(request_t *request) {
 
 			fcntl(fileno(tempFile), F_SETLK, &lock);
 			fcntl(fileno(all_tables), F_SETLK, &lock_2);
-			puts("unlocked in found");
 			fclose(all_tables);
 			fclose(tempFile);
-			return "Table dropped\n";
+			ret = "Table dropped\n";
 			
 		}
 
-		lock.l_type = F_UNLCK;
+		/*lock.l_type = F_UNLCK;
 		lock_2.l_type = F_UNLCK;
 
 		fcntl(fileno(tempFile), F_SETLK, &lock);
 		fcntl(fileno(all_tables), F_SETLK, &lock_2);
 		puts("unlocked outside of found");
 		fclose(all_tables);
-		fclose(tempFile);
+		fclose(tempFile);*/
 	}else{
+		sleep(1);
 		drop_table(request);
 	}
 
-	return "No such table\n";
+	return ret;
 }
 
 
@@ -245,20 +251,20 @@ char* table_schema(request_t *request) {
 	strcat(fileName, "database/Table_schema/");	
  	strcat(fileName, request->table_name);
 	strcat(fileName, "_table_schema.txt");
-	FILE* table_schema = fopen(fileName, "r");
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
-
-	//if (tables_schema == NULL) exit(EXIT_FAILURE);
-
 	
-	while(fgets(line, sizeof(line), table_schema) != NULL){ // read each line of the provided file in the file variable
-		strcat(ret, line);
+	if (fileexists(fileName) == 1) {
+		FILE* table_schema = fopen(fileName, "r");
+		while(fgets(line, sizeof(line), table_schema) != NULL){ // read each line of the provided file in the file variable
+			strcat(ret, line);
+		}
+		fclose(table_schema);
+	} else {
+		ret = "Table does not exist";
 	}
-	fclose(table_schema);
-	free(fileName);
-	free(ret);
+
 	return ret;
 }
 
