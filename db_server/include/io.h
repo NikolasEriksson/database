@@ -19,10 +19,6 @@ FILE *file;
 }
 
 char* create_table(request_t *request) {
-	char* tempFileName = "database/all_tables_temp.txt";
-	FILE* tempFile = fopen(tempFileName, "w");
-	fclose(tempFile);
-
 // File pointers to the file to be created
 FILE* all_tables;
 FILE* table_schema;
@@ -141,36 +137,54 @@ strcat(filename, "_table_contents.txt");
 char* drop_table(request_t *request) {
 	char* fileName = "database/all_tables.txt";
 	char* tempFileName = "database/all_tables_temp.txt";
-	FILE* tempFile = fopen(tempFileName, "a");
-	FILE* all_tables = fopen(fileName, "r");
-	bool found = false;	
-
-	struct flock lock;
-	struct flock lock_2;
-
-	lock.l_type = F_WRLCK | F_RDLCK;
-	lock_2.l_type = F_RDLCK;
+	int all_tables = open(fileName, O_RDONLY);
+	int tempFile = open(tempFileName, O_RDWR | O_CREAT);
+	bool found = false;
 	
-	lock_2.l_start = 0;
-	lock_2.l_whence = SEEK_SET;
-	lock_2.l_len = 0;
+	struct flock lock;
+	memset(&lock, 0, sizeof(lock));
+	lock.l_type = F_WRLCK;
+	int test1 = fcntl(tempFile, F_SETLK, &lock);
+
+	struct flock lock_2;
+	memset(&lock_2, 0, sizeof(lock_2));
+	lock_2.l_type = F_RDLCK;
+	int test2 = fcntl(all_tables, F_SETLK, &lock_2);
 	
 	sleep(3);
-	int test1 = fcntl(fileno(tempFile), F_SETLK, &lock);
-
-	int test2 = fcntl(fileno(all_tables), F_SETLK, &lock_2);
-
-	printf("%i", fcntl(fileno(all_tables), F_GETLK, &lock_2));
 
 	printf("test1: %i, test2: %i\n", test1, test2);	
 	
 	if(test1 != -1 && test2 != -1){
 		sleep(10);
+		int fileread, i;
+		char buffert[128];
+		char* temp;
 
-		char* line = malloc(sizeof(char)*255);
-		char* pos;
-
-		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
+		if(all_tables > 0) {
+			fileread = read(all_tables, buffert, sizeof(buffert));
+			printf("%s\n", buffert);
+			for(i=0; i < strlen(buffert); i++) {
+				if(buffert[i] == '\n') {
+					puts("linebreak");
+				} else {
+					temp = buffert[i];
+					strcat(temp, buffert[i]);
+				}
+				if(strcmp(temp, request->table_name != 0)) {
+					write(tempFile, buffert[i], fileread);				
+				} else { found = true; puts("Table existed");}
+			}
+			/*if(strcmp(*buf2[i], request->table_name) != 0) {
+			write(tempFile, buffert, fileread);
+			} else {
+				found = true;
+				puts("TABLE EXISTED");
+			}*/
+		}
+		//close(tempFile);	
+		
+		/*while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
 			if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
 			if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
 				fprintf(tempFile, "%s\n", line);
@@ -179,7 +193,7 @@ char* drop_table(request_t *request) {
 				found = true;
 			 	puts("TABLE EXISTED");
 			}
-		}
+		}*/
 	
 		if(found){
 			char* first = malloc(sizeof(char)*255);
@@ -204,31 +218,23 @@ char* drop_table(request_t *request) {
 			lock.l_type = F_UNLCK;
 			lock_2.l_type = F_UNLCK;
 
-	lock_2.l_start = 0;
-	lock_2.l_whence = SEEK_SET;
-	lock_2.l_len = 0;
-
-			fcntl(fileno(tempFile), F_SETLK, &lock);
-			fcntl(fileno(all_tables), F_SETLK, &lock_2);
+			fcntl(tempFile, F_SETLK, &lock);
+			fcntl(all_tables, F_SETLK, &lock_2);
 			return "Table dropped\n";
 			puts("unlocked in found");
-			fclose(all_tables);
-			fclose(tempFile);
+			close(all_tables);
+			close(tempFile);
 			
 		}
 
 		lock.l_type = F_UNLCK;
 		lock_2.l_type = F_UNLCK;
 
-	lock_2.l_start = 0;
-	lock_2.l_whence = SEEK_SET;
-	lock_2.l_len = 0;
-
-		fcntl(fileno(tempFile), F_SETLK, &lock);
-		fcntl(fileno(all_tables), F_SETLK, &lock_2);
+		fcntl(tempFile, F_SETLK, &lock);
+		fcntl(all_tables, F_SETLK, &lock_2);
 		puts("unlocked outside of found");
-		fclose(all_tables);
-		fclose(tempFile);
+		close(all_tables);
+		close(tempFile);
 	}else{
 		sleep(1);
 		puts("rec");
