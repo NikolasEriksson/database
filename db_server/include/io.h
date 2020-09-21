@@ -221,21 +221,20 @@ char* all_tables() {
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
-	FILE* all_tables = fopen(fileName, "r");
 	if (fileexists(fileName) == 1) {
+		FILE* all_tables = fopen(fileName, "r");
+		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
+				strcat(ret, line);
+			}	
 		fseek(all_tables, 0, SEEK_END);
 		if (ftell(all_tables) == 0) {
-			ret = "No tables";
-		}
-	} else if (fileexists(fileName) != 1) {
-			ret = "No tables";
-	} else {
-		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
-			strcat(ret, line);
-		}
-	}
+			ret = "1";
+		}				
 		fclose(all_tables);
-		//free(ret);
+	} else {
+		ret = "1";
+	}
+	
 	return ret;
 }
 
