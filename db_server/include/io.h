@@ -263,10 +263,11 @@ char* all_tables() {
 
 
 char* table_schema(request_t *request) {
-	char* fileName = malloc(sizeof(char)*255);
-	memset(fileName, 0, sizeof fileName);
-	strcat(fileName, "database/Table_schema/");	
- 	strcat(fileName, request->table_name);
+	//char* fileName = malloc(sizeof(char)*255);
+	//memset(fileName, 0, sizeof fileName);
+	//strcat(fileName, "database/Table_schema/");	
+	char* fileName = "database/Table_schema/";
+	strcat(fileName, request->table_name);
 	strcat(fileName, "_table_schema.txt");
 	FILE* table_schema = fopen(fileName, "r");
 	char line[255];
@@ -280,7 +281,7 @@ char* table_schema(request_t *request) {
 		strcat(ret, line);
 	}
 	fclose(table_schema);
-	free(fileName);
+	//free(fileName);
 	free(ret);
 	return ret;
 }
