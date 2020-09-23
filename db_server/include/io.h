@@ -52,13 +52,14 @@ char* create_table(request_t *request) {
 		while(lock1 != 0){
 			all_tables = fopen(filename, "a");
 			lock1 = fcntl(fileno(all_tables), F_SETLK, &lock);
-		}
+		}		
 			table_schema = fopen(filename_2, "a");
 			table_content = fopen(filename_3, "a");
 
 		while(fgets(line, sizeof(line), table_schema) != NULL){ // read each line of the provided file in the file variable
 				strcat(checkempty, line);
-			}	
+			}
+		free(checkempty);	
 		fseek(table_schema, 0, SEEK_END);
 		if (ftell(table_schema) == 0) {
 			fprintf(all_tables, "%s\n", request->table_name); //Print table name to to file 
