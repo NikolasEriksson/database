@@ -166,7 +166,6 @@ char* drop_table(request_t *request) {
 	bool found = false;
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
-	ret = "No such table\n";
 	
 	struct flock lock;
 	memset(&lock, 0, sizeof(lock));
@@ -180,7 +179,7 @@ char* drop_table(request_t *request) {
 
 		
 	if(lock1 != -1 && lock2 != -1){
-		char* line = malloc(sizeof(char)*255);
+		char line[255];
 		char* pos;
 		while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
 			if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
@@ -193,22 +192,16 @@ char* drop_table(request_t *request) {
 		}
 	
 		if(found){
-			char* first = malloc(sizeof(char)*255);
-			memset(first, 0, sizeof first);
-			strcat(first, "database/Table_contents/");
+			char first[255] = "database/Table_contents/";
 			strcat(first, request->table_name);
 			strcat(first, "_table_contents.txt");
 
-			char* second = malloc(sizeof(char)*255);
-			memset(second, 0, sizeof second);
-			strcat(second, "database/Table_schema/");
+			char second[255] = "database/Table_schema/";
 			strcat(second, request->table_name);
 			strcat(second, "_table_schema.txt");
 
 			remove(first);
 			remove(second);
-			free(first);
-			free(second);
 			remove(fileName);
 			rename(tempFileName, fileName);
 			
@@ -219,10 +212,11 @@ char* drop_table(request_t *request) {
 			fcntl(fileno(all_tables), F_SETLK, &lock_2);
 			fclose(all_tables);
 			fclose(tempFile);
-			ret = "Table dropped\n";	
+			strcat(ret, "Table dropped\n");	
+		}else{
+			strcat(ret, "No such table\n");
 		}
 	}else{
-		sleep(1);
 		drop_table(request);
 	}
 
