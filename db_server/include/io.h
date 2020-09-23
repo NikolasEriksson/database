@@ -28,7 +28,9 @@ char* create_table(request_t *request) {
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
 
-	//char* filename = request->table_name; // Filename taken from the table name
+	char line[255];
+	char* checkempty = malloc(sizeof(char)*255);
+	memset(ret, 0, sizeof ret);
 	
 	char filename[255] = "database/all_tables.txt";
 
@@ -42,19 +44,26 @@ char* create_table(request_t *request) {
 	
 	if(fileexists(filename_2) == 0) { //Check if the file exists
 
-	all_tables = fopen(filename, "a");
 	struct flock lock;
 	memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
-	int lock1 = fcntl(fileno(all_tables), F_SETLK, &lock);
+	int lock1 = -1;
 
-		if(lock1 != -1) {
-			sleep(5);
-			table_schema = fopen(filename_2, "w");
-			table_content = fopen(filename_3, "w");
+		while(lock1 != 0){
+			all_tables = fopen(filename, "a");
+			lock1 = fcntl(fileno(all_tables), F_SETLK, &lock);
+		}
+			table_schema = fopen(filename_2, "a");
+			table_content = fopen(filename_3, "a");
+
+		while(fgets(line, sizeof(line), table_schema) != NULL){ // read each line of the provided file in the file variable
+				strcat(checkempty, line);
+			}	
+		fseek(table_schema, 0, SEEK_END);
+		if (ftell(table_schema) == 0) {
 			fprintf(all_tables, "%s\n", request->table_name); //Print table name to to file 
 			column_t *current = request->columns; //Set the first request column to be able to loop through 
-						
+					
 			while(current != NULL) { //Loop through all columns and add column name and type + char_size
 				fprintf(table_schema, "%s\t", current->name);
 
@@ -67,22 +76,19 @@ char* create_table(request_t *request) {
 				fprintf(table_schema, "\n");
 				current = current->next;
 			}
-			
 			lock.l_type = F_UNLCK;
 			fcntl(fileno(all_tables), F_SETLK, &lock);
+			strcat(ret, "Succesfully created\n");
+		} else { 
+			strcat(ret, "Table already exists\n");
+		}	
 			fclose(table_schema);
 			fclose(table_content);
 			fclose(all_tables);
-			strcat(ret, "Succesfully created\n");	
-		} else {
-			sleep(1);
-			puts("File locked");
-			create_table(request);
-		}
+				 
 	} else {
 		strcat(ret, "Table already exists\n");
 	}
-	printf("%s", ret);
 	return ret;
 }
 
@@ -169,26 +175,17 @@ char* drop_table(request_t *request) {
 	memset(ret, 0, sizeof ret);
 
 	if(fileexists(fileName) == 1){
-		struct flock lock_2;
-		memset(&lock_2, 0, sizeof(lock_2));
-		lock_2.l_type = F_WRLCK;
-		int lock2 = -1;
 
 		struct flock lock;
 		memset(&lock, 0, sizeof(lock));
 		lock.l_type = F_WRLCK; 
 		int lock1 = -1;
 		
-		while(lock1 != 0 && lock2 != 0){
-			sleep(2);
+		while(lock1 != 0){
 			all_tables = fopen(fileName, "r");
 			tempFile = fopen(tempFileName, "w");
-			printf("1: lock1: %i, lock2: %i\n", lock1, lock2);
 			lock1 = fcntl(fileno(tempFile), F_SETLK, &lock);
-			lock2 = fcntl(fileno(all_tables), F_SETLK, &lock_2);
-			printf("2: lock1: %i, lock2: %i\n", lock1, lock2);
-		}
-		
+		}	
 			char line[255];
 			char* pos;
 			while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
@@ -198,7 +195,6 @@ char* drop_table(request_t *request) {
 					fflush(tempFile);
 				}else{
 					found = true;
-					puts("table existed");
 				}
 			}
 	
@@ -221,10 +217,7 @@ char* drop_table(request_t *request) {
 			}
 
 			lock.l_type = F_UNLCK;
-			lock_2.l_type = F_UNLCK;
-
 			fcntl(fileno(tempFile), F_SETLK, &lock);
-			fcntl(fileno(all_tables), F_SETLK, &lock_2);
 
 			fclose(all_tables);
 			fclose(tempFile);
