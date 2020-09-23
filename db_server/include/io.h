@@ -28,31 +28,21 @@ char* create_table(request_t *request) {
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
 
-	char* filename = request->table_name; // Filename taken from the table name
+	//char* filename = request->table_name; // Filename taken from the table name
+	
+	char filename[255] = "database/all_tables.txt";
 
-	// Path to the folder
-	char* path = "database//";
-	char* path2 = "database//Table_schema//";
-	char* path3 = "database//Table_contents//";
+	char filename_2[255] = "database/Table_schema/";
+	strcat(filename_2, request->table_name);
+	strcat(filename_2, "_table_schema.txt");
 
-	// Extension to make them with correct name
-	char* extension = "all_tables.txt";
-	char* extension2 = "_table_schema.txt";
-	char* extension3 = "_table_contents.txt";
+	char filename_3[255] = "database/Table_contents/";
+	strcat(filename_3, request->table_name);
+	strcat(filename_3, "_table_contents.txt");
+	
+	if(fileexists(filename_2) == 0) { //Check if the file exists
 
-	// Get correct size of full path filename
-	char fullfile[strlen(path)+strlen(extension)+1];
-	char fullfile2[strlen(path2)+strlen(filename)+strlen(extension2)+1];
-	char fullfile3[strlen(path3)+strlen(filename)+strlen(extension3)+1];
-
-	//Concat filenames
-	snprintf( fullfile, sizeof( fullfile ), "%s%s", path, extension); // File for all tables
-	snprintf( fullfile2, sizeof( fullfile2 ), "%s%s%s", path2, filename, extension2); // File for the table schema
-	snprintf( fullfile3, sizeof( fullfile3 ), "%s%s%s", path3, filename, extension3); // File for the contents of the table
-
-	if(fileexists(fullfile2) == 0) { //Check if the file exists
-
-	all_tables = fopen(fullfile, "a");
+	all_tables = fopen(filename, "a");
 	struct flock lock;
 	memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
@@ -60,8 +50,8 @@ char* create_table(request_t *request) {
 
 		if(lock1 != -1) {
 			sleep(5);
-			table_schema = fopen(fullfile2, "w");
-			table_content = fopen(fullfile3, "w");
+			table_schema = fopen(filename_2, "w");
+			table_content = fopen(filename_3, "w");
 			fprintf(all_tables, "%s\n", request->table_name); //Print table name to to file 
 			column_t *current = request->columns; //Set the first request column to be able to loop through 
 						
@@ -92,7 +82,7 @@ char* create_table(request_t *request) {
 	} else {
 		strcat(ret, "Table already exists\n");
 	}
-
+	printf("%s", ret);
 	return ret;
 }
 
@@ -161,77 +151,6 @@ char* select_values(request_t *request) {
 	} else {
 		//ret = "Table does not exist\n";
 		strcat(ret, "Table does not exist\n");
-	}
-	return ret;
-}
-
-
-char* drop_table(request_t *request) {
-	char* fileName = "database/all_tables.txt";
-	char* tempFileName = "database/all_tables_temp.txt";
-
-	bool found = false;
-	char* ret = malloc(sizeof(char)*255);
-	memset(ret, 0, sizeof ret);
-
-	if(fileexists(fileName) == 1){
-		FILE* all_tables = fopen(fileName, "r");
-		FILE* tempFile = fopen(tempFileName, "w");
-
-		struct flock lock;
-		memset(&lock, 0, sizeof(lock));
-		lock.l_type = F_WRLCK;
-		int lock1 = fcntl(fileno(tempFile), F_SETLK, &lock);
-
-		struct flock lock_2;
-		memset(&lock_2, 0, sizeof(lock_2));
-		lock_2.l_type = F_RDLCK;
-		int lock2 = fcntl(fileno(all_tables), F_SETLK, &lock_2);
-
-		
-		if(lock1 != -1 && lock2 != -1){
-			char line[255];
-			char* pos;
-			while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
-				if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
-				if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
-					fprintf(tempFile, "%s\n", line);
-					fflush(tempFile);
-				}else{
-					found = true;
-				}
-			}
-	
-			if(found){
-				char first[255] = "database/Table_contents/";
-				strcat(first, request->table_name);
-				strcat(first, "_table_contents.txt");
-
-				char second[255] = "database/Table_schema/";
-				strcat(second, request->table_name);
-				strcat(second, "_table_schema.txt");
-
-				remove(first);
-				remove(second);
-				remove(fileName);
-				rename(tempFileName, fileName);
-			
-				lock.l_type = F_UNLCK;
-				lock_2.l_type = F_UNLCK;
-
-				fcntl(fileno(tempFile), F_SETLK, &lock);
-				fcntl(fileno(all_tables), F_SETLK, &lock_2);
-				fclose(all_tables);
-				fclose(tempFile);
-				strcat(ret, "Table dropped\n");	
-			}else{
-				strcat(ret, "No such table\n");
-			}
-		}else{
-			drop_table(request);
-		}
-	}else{
-		strcat(ret, "No tables in the database\n");
 	}
 	return ret;
 }
