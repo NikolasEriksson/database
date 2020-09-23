@@ -145,8 +145,6 @@ char* insert(request_t *request) {
 	strcat(filename, request->table_name);
 	strcat(filename, "_table_contents.txt");
 
-<<<<<<< HEAD
-=======
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
 
@@ -176,7 +174,6 @@ char* insert(request_t *request) {
 			fcntl(fileno(table_content), F_SETLK, &lock);
 			fclose(table_content);
 			strcat(ret, "Successfully updated\n");
->>>>>>> 375178d3fd30e480021b20a98907cb48683796fb
 		} else {
 			strcat(ret, "Table does not exist\n");
 		}
