@@ -91,17 +91,18 @@ char* insert(request_t *request) {
 	char filename[255] = "database/Table_contents/";
 	strcat(filename, request->table_name);
 	strcat(filename, "_table_contents.txt");
+
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
-
+	
 	if(fileexists(filename) == 1) {
 		table_content = fopen(filename, "a");
 		struct flock lock;
 		memset(&lock, 0, sizeof(lock));
 		lock.l_type = F_WRLCK;
 		int lock1 = fcntl(fileno(table_content), F_SETLK, &lock);
-	
 			if(lock1 != -1) {
+				sleep(5);
 				column_t *current = request->columns; 
 				//Loop through all columns and add column name and type + char_size	
 				while(current != NULL) {
@@ -155,6 +156,84 @@ char* select_values(request_t *request) {
 	return ret;
 }
 
+
+char* drop_table(request_t *request) {
+	char* fileName = "database/all_tables.txt";
+	char* tempFileName = "database/all_tables_temp.txt";
+
+	FILE* all_tables;
+	FILE* tempFile;
+
+	bool found = false;
+	char* ret = malloc(sizeof(char)*255);
+	memset(ret, 0, sizeof ret);
+
+	if(fileexists(fileName) == 1){
+		struct flock lock_2;
+		memset(&lock_2, 0, sizeof(lock_2));
+		lock_2.l_type = F_WRLCK;
+		int lock2 = -1;
+
+		struct flock lock;
+		memset(&lock, 0, sizeof(lock));
+		lock.l_type = F_WRLCK; 
+		int lock1 = -1;
+		
+		while(lock1 != 0 && lock2 != 0){
+			sleep(2);
+			all_tables = fopen(fileName, "r");
+			tempFile = fopen(tempFileName, "w");
+			printf("1: lock1: %i, lock2: %i\n", lock1, lock2);
+			lock1 = fcntl(fileno(tempFile), F_SETLK, &lock);
+			lock2 = fcntl(fileno(all_tables), F_SETLK, &lock_2);
+			printf("2: lock1: %i, lock2: %i\n", lock1, lock2);
+		}
+		
+			char line[255];
+			char* pos;
+			while(fgets(line, sizeof(line), all_tables) != NULL){ // read each line of the provided file in the file variable
+				if((pos=strchr(line, '\n')) != NULL) *pos = '\0';
+				if(strcmp(line, request->table_name) != 0){ // if the current line is NOT the table to be deleted		
+					fprintf(tempFile, "%s\n", line);
+					fflush(tempFile);
+				}else{
+					found = true;
+					puts("table existed");
+				}
+			}
+	
+			if(found){
+				char first[255] = "database/Table_contents/";
+				strcat(first, request->table_name);
+				strcat(first, "_table_contents.txt");
+
+				char second[255] = "database/Table_schema/";
+				strcat(second, request->table_name);
+				strcat(second, "_table_schema.txt");
+
+				remove(first);
+				remove(second);
+				remove(fileName);
+				rename(tempFileName, fileName);
+				strcat(ret, "Table dropped\n");	
+			}else{
+				strcat(ret, "No such table\n");
+			}
+
+			lock.l_type = F_UNLCK;
+			lock_2.l_type = F_UNLCK;
+
+			fcntl(fileno(tempFile), F_SETLK, &lock);
+			fcntl(fileno(all_tables), F_SETLK, &lock_2);
+
+			fclose(all_tables);
+			fclose(tempFile);
+				
+	}else{
+		strcat(ret, "No tables in the database\n");
+	}
+	return ret;
+}
 
 char* all_tables() {
 	char* fileName = "database/all_tables.txt";
