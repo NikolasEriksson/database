@@ -180,16 +180,20 @@ int main(int argc, char* argv[]) {
 
 				}else if(showTables){
 					char* allTables = all_tables();
-					if(allTables != "No tables") {
-						send(new, "showing all tables\n", strlen("showing all tables\n") + 1, 0);
+					if(strcmp(allTables, "empty") != 0) {
+						send(new, "Showing all tables\n", strlen("Showing all tables\n") + 1, 0);
 						send(new, allTables, strlen(allTables) + 1, 0);
 					} else {
 						send(new, "No tables exists\n", strlen("No tables exists\n") + 1, 0);
 					}
 				}else if(showSchema){
-					send(new, "showing schema for table\n", strlen("showing schema for table\n") + 1, 0);
 					char* returnSchema = table_schema(request);
+					if(strcmp(returnSchema, "Table does not exist") != 0) {					
+					send(new, "Showing schema for table\n", strlen("Showing schema for table\n") + 1, 0);
 					send(new, returnSchema, strlen(returnSchema) + 1, 0);
+					} else {
+						send(new, "No such table exists\n", strlen("No such table exists\n") +1, 0);
+					}
 				}else{
 
 					char* returnVal;
