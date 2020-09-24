@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
+#include <signal.h>
 // for request lib
 #include "../include/request.h"
 // for input/output (db)
@@ -41,6 +42,17 @@ void term_nonblocking(){
 }
 //
 
+//pid_t pid;
+//int finished = 0;
+/*void zombie(int sig){
+	int status;
+	waitpid(pid, &status, WNOHANG);
+	printf("got status %d from child\n", status);
+	//finished = 1;
+}*/
+
+
+
 int main(int argc, char* argv[]) {
 	int portnumber = 1337; // default port
 	struct sockaddr_in sin, pin;
@@ -48,7 +60,7 @@ int main(int argc, char* argv[]) {
 	int addrlen;
 	char buf[BUFSIZE];
 	char* noCommand = "No such command. Connect and try again.\n";
-	int pid;
+	pid_t pid;
 	char message[255];
 	bool isQuit=false;
 	bool showTables=false;
@@ -111,9 +123,9 @@ int main(int argc, char* argv[]) {
 	listen(sd, 10); // there wont be any connections waiting since we fork each new client. keep at 10.
 	//shutdown(sd, SHUT_RDWR);
 	addrlen = sizeof(pin);
-
-	//int status = 1337;
-
+	int nmbProc = 0;
+	int status = 1337;
+	//signal(SIGCHLD, zombie);
 	while(1){
 		int test = getchar();
 		if(test>0) {
@@ -122,7 +134,7 @@ int main(int argc, char* argv[]) {
 		}
 		// accept connection
 		new = accept(sd, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
-		
+
 		// clean the buffers, strange chars will appear in the server console otherwise.
 		memset(buf, 0, sizeof buf);
 		memset(message, 0, sizeof message);
@@ -133,16 +145,19 @@ int main(int argc, char* argv[]) {
 			continue;
 		}else if(pid > 0){  // in parent process (when the child exits)	
 			puts("IN PARENT");
+
 			// TODO: fix this :)
-			/*if(waitpid(pid, &status, WNOHANG) != -1){
+
+			if(waitpid(pid, &status, 0) != -1){
 				printf("Process %i terminated sucessfully\n", pid);
 			}else{
 				puts("Uh-Oh, couldn't terminate process..\n");
-			}*/
-			close(new);
-			continue;
+			}
+			//close(new);
+			//continue;
 		}else if(pid == 0){ // in child process
 			puts("IN CHILD");
+			close(sd);
 			while(1){
 				do {					        
 					// receive at most sizeof(buf) many bytes and store them in the buffer */
@@ -165,24 +180,24 @@ int main(int argc, char* argv[]) {
 				
 				// print the message to server terminal
 				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
-
+				// error handeling var
+				char* error;				
+				
 				// create the request and parse it
 				request_t *request;
-				request = parse_request(message);
-				if(!request){
-					send(new, noCommand, strlen(noCommand) + 1, 0);	
-					free(request);			
-					shutdown(new, SHUT_RDWR); // shutdoooown
-					close(new);
-					exit(pid);
+				request = parse_request(message, &error);
+				if(request == NULL){
+					strcat(error, "\n");
+					send(new, error, strlen(error) + 1, 0);
+					free(error);
 				}
+
 				if(isQuit){
 					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
 					destroy_request(request);
-					shutdown(new, SHUT_RDWR); // shutdoooown
-					close(new);
+					//shutdown(new, SHUT_RDWR);
+					//close(new);
 					exit(pid);
-
 				}else if(showTables){
 					char* allTables = all_tables();
 					if(strcmp(allTables, "empty") != 0) {
@@ -234,7 +249,27 @@ int main(int argc, char* argv[]) {
 				memset(buf, 0, sizeof buf);
 				memset(message, 0, sizeof message);
 			}
-		}
+
+		} 
+/*		printf("nmbPRoc = %i\n", nmbProc);
+		close(new);
+		nmbProc++;
+		printf("nmbPRoc = %i\n", nmbProc);
+		while(nmbProc > 0){
+			pid = waitp*id((pid_t) -1, NULL, WNOHANG);
+			if(pid < 0) {
+				puts("error som fan");
+			}else if(pid == 0){
+				break;
+			}else{
+				nmbProc--;
+				printf("child killed - #: %i", nmbProc);
+				//shutdown(new, SHUT_RDWR);		
+			}	
+		
+
+		} */
+
 	}
 	/* The close for sd never happens, this should be fixed to avoid leaks or open ports etc. */ 
         /* close the file descriptors 
