@@ -16,7 +16,6 @@
 #include "../include/io.h"
 // for waitpid
 #include <sys/wait.h>
-
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
 
@@ -158,14 +157,14 @@ int main(int argc, char* argv[]) {
 					close(clientSocket);
 					exit(pid);
 				}else if(showTables){ // if the client sent .tables, show all tables if they exist, else tell the client that no tables exists
-					char* allTables = allTables();
-					if(strcmp(allTables, "empty") != 0) {
+					char* returnTable = allTables();
+					if(strcmp(returnTable, "empty") != 0) {
 						send(clientSocket, "Showing all tables\n", strlen("Showing all tables\n") + 1, 0);
-						send(clientSocket, allTables, strlen(allTables) + 1, 0);
+						send(clientSocket, returnTable, strlen(returnTable) + 1, 0);
 					} else {
 						send(clientSocket, "No tables exists\n", strlen("No tables exists\n") + 1, 0);
 					}
-					free(allTables);
+					free(returnTable);
 				}else if(showSchema){ // if the client sent .schema x, x=table, send the schema back or tell the client that the table doesn't exist
 					char* returnSchema = tableSchema(request);
 					if(strcmp(returnSchema, "Table does not exist") != 0) {					
