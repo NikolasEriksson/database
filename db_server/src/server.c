@@ -148,11 +148,11 @@ int main(int argc, char* argv[]) {
 
 			// TODO: fix this :)
 
-			if(waitpid(pid, &status, 0) != -1){
+			/*if(waitpid(pid, &status, 0) != -1){
 				printf("Process %i terminated sucessfully\n", pid);
 			}else{
 				puts("Uh-Oh, couldn't terminate process..\n");
-			}
+			}*/
 			//close(new);
 			//continue;
 		}else if(pid == 0){ // in child process
@@ -256,7 +256,7 @@ int main(int argc, char* argv[]) {
 		nmbProc++;
 		printf("nmbPRoc = %i\n", nmbProc);
 		while(nmbProc > 0){
-			pid = waitp*id((pid_t) -1, NULL, WNOHANG);
+			pid = waitpid((pid_t) -1, NULL, WNOHANG);
 			if(pid < 0) {
 				puts("error som fan");
 			}else if(pid == 0){
@@ -268,7 +268,7 @@ int main(int argc, char* argv[]) {
 			}	
 		
 
-		} */
+		}*/ 
 
 	}
 	/* The close for sd never happens, this should be fixed to avoid leaks or open ports etc. */ 
