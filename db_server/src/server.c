@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <sys/errno.h>
 #include <arpa/inet.h>
-#include <stdbool.h>
+//#include <stdbool.h>
 
 #include <signal.h>
 // for request lib
@@ -21,55 +21,31 @@
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
 
-// THIS WORKS 
-#include <termios.h>
-struct termios stdin_orig;
+// when child terminates the parent gets signal and call this function to terminate the process
+void sighandler(){ 
+	while(waitpid(-1, NULL, WNOHANG) > 0){ // -1 = wait for any child, WNOHANG = don't block if the state isn't changed (man waitpid)
+		continue;
+	}
 
-void term_reset(){
-	tcsetattr(STDIN_FILENO,TCSANOW,&stdin_orig);
-	tcsetattr(STDIN_FILENO,TCSAFLUSH,&stdin_orig);
+	puts("Child process terminated");
 }
 
-void term_nonblocking(){
-	struct termios newt;
-	tcgetattr(STDIN_FILENO, &stdin_orig);
-	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
-	newt = stdin_orig;
-	newt.c_lflag &= ~(ICANON | ECHO);
-	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
-	atexit(term_reset);
-}
-//
-
-//pid_t pid;
-//int finished = 0;
-/*void zombie(int sig){
-	int status;
-	waitpid(pid, &status, WNOHANG);
-	printf("got status %d from child\n", status);
-	//finished = 1;
-}*/
 
 
 
 int main(int argc, char* argv[]) {
 	int portnumber = 1337; // default port
 	struct sockaddr_in sin, pin;
-	int sd;
+	int serverSocket; 
+	int clientSocket;
 	int addrlen;
 	char buf[BUFSIZE];
-	char* noCommand = "No such command. Connect and try again.\n";
 	pid_t pid;
 	char message[255];
-	bool isQuit=false;
-	bool showTables=false;
-	bool showSchema=false;
-
-	int new;
-	term_nonblocking();
+	int isQuit=0;
+	int showTables=0;
+	int showSchema=0;
 	
-
 	if(argc < 2 || argc > 3) {
 		fprintf(stderr, "Usage: %s -p <port>\n", argv[0]);
 		exit(-1);
@@ -99,12 +75,12 @@ int main(int argc, char* argv[]) {
 	puts("------");
 
         /* get a file descriptor for an IPv4 socket using TCP */
-	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+	if((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		DIE("socket");
 	}
 
 	int option = 1;
-	setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
         /* zero out the sockaddr_in struct */
 	memset(&sin, 0, sizeof(sin));
@@ -116,61 +92,44 @@ int main(int argc, char* argv[]) {
 	sin.sin_port = htons(portnumber);
 
         /* perform bind call */
-	if(bind(sd, (struct sockaddr*) &sin, sizeof(sin)) == -1){
+	if(bind(serverSocket, (struct sockaddr*) &sin, sizeof(sin)) == -1){
 		DIE("bind");
 	}
 	
-	listen(sd, 10); // there wont be any connections waiting since we fork each new client. keep at 10.
+	listen(serverSocket, 10); // there wont be any connections waiting since we fork each new client. keep at 10.
 	//shutdown(sd, SHUT_RDWR);
 	addrlen = sizeof(pin);
-	int nmbProc = 0;
-	int status = 1337;
-	//signal(SIGCHLD, zombie);
+
+	signal(SIGCHLD, sighandler);
+
 	while(1){
-		int test = getchar();
-		if(test>0) {
-			puts("exit");
-			exit(0);
-		}
 		// accept connection
-		new = accept(sd, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
+		clientSocket = accept(serverSocket, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
 
 		// clean the buffers, strange chars will appear in the server console otherwise.
 		memset(buf, 0, sizeof buf);
 		memset(message, 0, sizeof message);
 
 		if((pid = fork()) == -1){ // something went very wrong
-			close(new);
-			close(sd);
+			close(clientSocket);
+			close(serverSocket);
 			continue;
-		}else if(pid > 0){  // in parent process (when the child exits)	
-			puts("IN PARENT");
-
-			// TODO: fix this :)
-
-			if(waitpid(pid, &status, 0) != -1){
-				printf("Process %i terminated sucessfully\n", pid);
-			}else{
-				puts("Uh-Oh, couldn't terminate process..\n");
-			}
-			//close(new);
-			//continue;
+		// the parent process doesn't need to to anything after this, since we're waiting for the SIGCHILD signal
 		}else if(pid == 0){ // in child process
-			puts("IN CHILD");
-			close(sd);
+			close(serverSocket);
 			while(1){
 				do {					        
 					// receive at most sizeof(buf) many bytes and store them in the buffer */
-					if(recv(new, buf, sizeof(buf), 0) == -1) { 
+					if(recv(clientSocket, buf, sizeof(buf), 0) == -1) { 
 						DIE("recv");
 					}
 
 					strcat(message, buf);
 
 					// check if the buffer contains the different commands that will have to be executed instantly ( no need for ; )
-					isQuit = strstr(buf, ".quit")	    ? true : false;
-					showTables = strstr(buf, ".tables") ? true : false;
-					showSchema = strstr(buf, ".schema") ? true : false;
+					isQuit = strstr(buf, ".quit")	    ? 1 : 0;
+					showTables = strstr(buf, ".tables") ? 1 : 0;
+					showSchema = strstr(buf, ".schema") ? 1 : 0;
 					// there was another memset here previosly, doesn't seem to be needed anymore
 				}while(!strstr(message, ";") && (!isQuit) && (!showTables) && (!showSchema));
 				
@@ -180,64 +139,64 @@ int main(int argc, char* argv[]) {
 				
 				// print the message to server terminal
 				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
+
 				// error handeling var
 				char* error;				
 				
 				// create the request and parse it
 				request_t *request;
 				request = parse_request(message, &error);
-				if(request == NULL){
+				if(request == NULL){ // if there was an error with the request, tell the client and free the error
 					strcat(error, "\n");
-					send(new, error, strlen(error) + 1, 0);
+					send(clientSocket, error, strlen(error) + 1, 0);
 					free(error);
 				}
 
-				if(isQuit){
+				if(isQuit){ // if the client sent .quit, close the connection and exit the process (and send the SIGCHLD signal)
 					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
 					destroy_request(request);
-					//shutdown(new, SHUT_RDWR);
-					//close(new);
+					shutdown(clientSocket, SHUT_RDWR);
+					close(clientSocket);
 					exit(pid);
-				}else if(showTables){
-					char* allTables = all_tables();
+				}else if(showTables){ // if the client sent .tables, show all tables if they exist, else tell the client that no tables exists
+					char* allTables = allTables();
 					if(strcmp(allTables, "empty") != 0) {
-						send(new, "Showing all tables\n", strlen("Showing all tables\n") + 1, 0);
-						send(new, allTables, strlen(allTables) + 1, 0);
+						send(clientSocket, "Showing all tables\n", strlen("Showing all tables\n") + 1, 0);
+						send(clientSocket, allTables, strlen(allTables) + 1, 0);
 					} else {
-						send(new, "No tables exists\n", strlen("No tables exists\n") + 1, 0);
+						send(clientSocket, "No tables exists\n", strlen("No tables exists\n") + 1, 0);
 					}
 					free(allTables);
-				}else if(showSchema){
-					char* returnSchema = table_schema(request);
+				}else if(showSchema){ // if the client sent .schema x, x=table, send the schema back or tell the client that the table doesn't exist
+					char* returnSchema = tableSchema(request);
 					if(strcmp(returnSchema, "Table does not exist") != 0) {					
-						send(new, "Showing schema for table\n", strlen("Showing schema for table\n") + 1, 0);
-						send(new, returnSchema, strlen(returnSchema) + 1, 0);
+						send(clientSocket, "Showing schema for table\n", strlen("Showing schema for table\n") + 1, 0);
+						send(clientSocket, returnSchema, strlen(returnSchema) + 1, 0);
 					} else {
-						send(new, "No such table exists\n", strlen("No such table exists\n") +1, 0);
+						send(clientSocket, "No such table exists\n", strlen("No such table exists\n") +1, 0);
 					}
 					free(returnSchema);
-				}else{
-
+				}else{ // if the request wasn't one of the .requests, check the request type 
 					char* returnVal;
 					switch(request->request_type){
 						case RT_CREATE:
-							returnVal = create_table(request);
-							send(new, returnVal, strlen(returnVal)+1, 0);
+							returnVal = createTable(request);
+							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
 							free(returnVal);
 							break;
 						case RT_DROP:
-							returnVal = drop_table(request);
-							send(new, returnVal, strlen(returnVal)+1, 0);
+							returnVal = dropTable(request);
+							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
 							free(returnVal);
 							break;
 						case RT_INSERT:
 							returnVal = insert(request);
-							send(new, returnVal, strlen(returnVal)+1, 0);
+							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
 							free(returnVal);
 							break;
 						case RT_SELECT:
-							returnVal = select_values(request);
-							send(new, returnVal, strlen(returnVal)+1, 0);
+							returnVal = selectValues(request);
+							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
 							free(returnVal);
 							break;
 						default:
@@ -249,35 +208,11 @@ int main(int argc, char* argv[]) {
 				memset(buf, 0, sizeof buf);
 				memset(message, 0, sizeof message);
 			}
-
 		} 
-/*		printf("nmbPRoc = %i\n", nmbProc);
-		close(new);
-		nmbProc++;
-		printf("nmbPRoc = %i\n", nmbProc);
-		while(nmbProc > 0){
-			pid = waitp*id((pid_t) -1, NULL, WNOHANG);
-			if(pid < 0) {
-				puts("error som fan");
-			}else if(pid == 0){
-				break;
-			}else{
-				nmbProc--;
-				printf("child killed - #: %i", nmbProc);
-				//shutdown(new, SHUT_RDWR);		
-			}	
-		
-
-		} */
-
 	}
-	/* The close for sd never happens, this should be fixed to avoid leaks or open ports etc. */ 
-        /* close the file descriptors 
-         * NOTE: shutdown() might be a better alternative */
-	puts("SHUTDOWN");
-	
-	shutdown(sd, SHUT_RDWR);
-	close(sd);
+
+	shutdown(serverSocket, SHUT_RDWR);
+	close(serverSocket);
 	exit(0);
 }
 
