@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <sys/errno.h>
 #include <arpa/inet.h>
-//#include <stdbool.h>
 
 #include <signal.h>
 // for request lib
