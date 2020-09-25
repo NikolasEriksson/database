@@ -21,13 +21,20 @@
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
 
+//int counter = 0;
 // when child terminates the parent gets signal and call this function to terminate the process
 void sighandler(){ 
 	while(waitpid(-1, NULL, WNOHANG) > 0){ // -1 = wait for any child, WNOHANG = don't block if the state isn't changed (man waitpid)
 		continue;
 	}
-
+	//counter--;
+	//printf("counter: %i\n", counter);
+	/*sleep(2);
 	puts("Child process terminated");
+	if(counter == 0) {
+		puts("terminate parent");
+		exit(0);	
+	}*/
 }
 
 
@@ -41,12 +48,8 @@ int main(int argc, char* argv[]) {
 	int addrlen;
 	char buf[BUFSIZE];
 	pid_t pid;
-	char message[255];
-	int isQuit=0;
-	int showTables=0;
-	int showSchema=0;
-	
-	if(argc < 2 || argc > 3) {
+
+	if(argc < 1 || argc > 3) {
 		fprintf(stderr, "Usage: %s -p <port>\n", argv[0]);
 		exit(-1);
 	}
@@ -97,7 +100,7 @@ int main(int argc, char* argv[]) {
 	}
 	
 	listen(serverSocket, 10); // there wont be any connections waiting since we fork each new client. keep at 10.
-	//shutdown(sd, SHUT_RDWR);
+
 	addrlen = sizeof(pin);
 
 	signal(SIGCHLD, sighandler);
@@ -105,110 +108,92 @@ int main(int argc, char* argv[]) {
 	while(1){
 		// accept connection
 		clientSocket = accept(serverSocket, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
-
-		// clean the buffers, strange chars will appear in the server console otherwise.
+		//counter++;
+		// clean the buffer, strange chars will appear in the server console otherwise.
 		memset(buf, 0, sizeof buf);
-		memset(message, 0, sizeof message);
 
-		if((pid = fork()) == -1){ // something went very wrong
+		if((pid = fork()) == -1){ // something went wrong
 			close(clientSocket);
 			close(serverSocket);
 			continue;
-		// the parent process doesn't need to to anything after this, since we're waiting for the SIGCHILD signal
-		}else if(pid == 0){ // in child process
+		}else if(pid == 0){ // in child process // the parent process doesn't need to to anything after this, since we're waiting for the SIGCHILD signal
 			close(serverSocket);
 			while(1){
-				do {					        
-					// receive at most sizeof(buf) many bytes and store them in the buffer */
-					if(recv(clientSocket, buf, sizeof(buf), 0) == -1) { 
+	
+				// receive at most sizeof(buf) many bytes and store them in the buffer 
+				if(recv(clientSocket, buf, sizeof(buf), 0) == -1) { 
 						DIE("recv");
-					}
-
-					strcat(message, buf);
-
-					// check if the buffer contains the different commands that will have to be executed instantly ( no need for ; )
-					isQuit = strstr(buf, ".quit")	    ? 1 : 0;
-					showTables = strstr(buf, ".tables") ? 1 : 0;
-					showSchema = strstr(buf, ".schema") ? 1 : 0;
-					// there was another memset here previosly, doesn't seem to be needed anymore
-				}while(!strstr(message, ";") && (!isQuit) && (!showTables) && (!showSchema));
+				}
 				
 				/* convert IP address of communication partner to string */
 				char ipAddress[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET, &pin.sin_addr, ipAddress, sizeof(ipAddress));
 				
-				// print the message to server terminal
-				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), message);
+				// print the buf to server terminal
+				printf("%s:%i - %s\n", ipAddress, ntohs(pin.sin_port), buf);
 
 				// error handeling var
 				char* error;				
 				
 				// create the request and parse it
 				request_t *request;
-				request = parse_request(message, &error);
+				request = parse_request(buf, &error);
 				if(request == NULL){ // if there was an error with the request, tell the client and free the error
 					strcat(error, "\n");
 					send(clientSocket, error, strlen(error) + 1, 0);
 					free(error);
-				}
-
-				if(isQuit){ // if the client sent .quit, close the connection and exit the process (and send the SIGCHLD signal)
-					printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
-					destroy_request(request);
 					shutdown(clientSocket, SHUT_RDWR);
 					close(clientSocket);
-					exit(pid);
-				}else if(showTables){ // if the client sent .tables, show all tables if they exist, else tell the client that no tables exists
-					char* allTables = allTables();
-					if(strcmp(allTables, "empty") != 0) {
-						send(clientSocket, "Showing all tables\n", strlen("Showing all tables\n") + 1, 0);
-						send(clientSocket, allTables, strlen(allTables) + 1, 0);
-					} else {
-						send(clientSocket, "No tables exists\n", strlen("No tables exists\n") + 1, 0);
-					}
-					free(allTables);
-				}else if(showSchema){ // if the client sent .schema x, x=table, send the schema back or tell the client that the table doesn't exist
-					char* returnSchema = tableSchema(request);
-					if(strcmp(returnSchema, "Table does not exist") != 0) {					
-						send(clientSocket, "Showing schema for table\n", strlen("Showing schema for table\n") + 1, 0);
-						send(clientSocket, returnSchema, strlen(returnSchema) + 1, 0);
-					} else {
-						send(clientSocket, "No such table exists\n", strlen("No such table exists\n") +1, 0);
-					}
-					free(returnSchema);
-				}else{ // if the request wasn't one of the .requests, check the request type 
-					char* returnVal;
-					switch(request->request_type){
-						case RT_CREATE:
-							returnVal = createTable(request);
-							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
-							free(returnVal);
-							break;
-						case RT_DROP:
-							returnVal = dropTable(request);
-							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
-							free(returnVal);
-							break;
-						case RT_INSERT:
-							returnVal = insert(request);
-							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
-							free(returnVal);
-							break;
-						case RT_SELECT:
-							returnVal = selectValues(request);
-							send(clientSocket, returnVal, strlen(returnVal)+1, 0);
-							free(returnVal);
-							break;
-						default:
-							break;
-					}
+					exit(0);					
 				}
+
+				char* returnVal;
+				switch(request->request_type){
+					case RT_TABLES:
+						returnVal = allTables();
+						send(clientSocket, returnVal, strlen(returnVal)+1, 0);
+						free(returnVal);
+						break;
+					case RT_SCHEMA:
+						returnVal = tableSchema(request);
+						send(clientSocket, returnVal, strlen(returnVal)+1, 0);
+						free(returnVal);
+						break;
+					case RT_QUIT:
+						printf("Closing connection with %s:%i by request from client.\n", ipAddress, ntohs(pin.sin_port));
+						shutdown(clientSocket, SHUT_RDWR);
+						close(clientSocket);
+						exit(0);
+						break;
+					case RT_CREATE:
+						returnVal = createTable(request);
+						send(clientSocket, returnVal, strlen(returnVal)+1, 0);
+						free(returnVal);
+						break;
+					case RT_DROP:
+						returnVal = dropTable(request);
+						send(clientSocket, returnVal, strlen(returnVal)+1, 0);
+						free(returnVal);
+						break;
+					case RT_INSERT:
+						returnVal = insert(request);
+						send(clientSocket, returnVal, strlen(returnVal)+1, 0);
+						free(returnVal);
+						break;
+					case RT_SELECT:
+						returnVal = selectValues(request);
+						send(clientSocket, returnVal, strlen(returnVal)+1, 0);
+						free(returnVal);
+						break;
+					default:
+						break;
+					}
+				
 				destroy_request(request); // DESTROY the request
 	
 				memset(buf, 0, sizeof buf);
-				memset(message, 0, sizeof message);
 			}
-		} 
+		}
 	}
 
 	shutdown(serverSocket, SHUT_RDWR);
