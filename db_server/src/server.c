@@ -26,10 +26,10 @@ void sighandler(){
 	while(waitpid(-1, NULL, WNOHANG) > 0){ // -1 = wait for any child, WNOHANG = don't block if the state isn't changed (man waitpid)
 		continue;
 	}
+	puts("Child process terminated");
 	//counter--;
 	//printf("counter: %i\n", counter);
 	/*sleep(2);
-	puts("Child process terminated");
 	if(counter == 0) {
 		puts("terminate parent");
 		exit(0);	

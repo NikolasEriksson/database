@@ -253,9 +253,8 @@ char* allTables() {
 
 char* tableSchema(request_t *request) {
 	char fileName[255] = "database/Table_schema/";
-	strcat(fileName, request->table_name);
-	strcat(fileName, "_table_schema.txt");
-
+	strncat(fileName, request->table_name, strlen(request->table_name));
+	strncat(fileName, "_table_schema.txt", strlen("_table_schema.txt"));
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
@@ -263,7 +262,7 @@ char* tableSchema(request_t *request) {
 	if (fileExists(fileName) == 1) {
 		FILE* tableSchema = fopen(fileName, "r");
 		while(fgets(line, sizeof(line), tableSchema) != NULL){ // read each line of the provided file in the file variable
-			strcat(ret, line);
+			strncat(ret, line, sizeof(line));
 		}
 		fclose(tableSchema);
 	} else {
