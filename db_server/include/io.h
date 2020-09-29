@@ -57,7 +57,7 @@ char* createTable(request_t *request) {
 			tableContent = fopen(fileName_3, "a");
 
 		while(fgets(line, sizeof(line), tableSchema) != NULL){ // read each line of the provided file in the file variable
-				strcat(checkEmpty, line);
+				strncat(checkEmpty, line, sizeof(line));
 			}
 		free(checkEmpty);	
 		fseek(tableSchema, 0, SEEK_END);
@@ -147,7 +147,7 @@ char* selectValues(request_t *request) {
 	if(fileExists(fileName) == 1) {
 		tableContent = fopen(fileName, "r");
 		while(fgets(line, sizeof(line), tableContent) != NULL){ // read each line of the provided file in the file variable
-			strcat(ret, line);
+			strncat(ret, line, sizeof(line));
 		}
 		fseek(tableContent, 0, SEEK_END);
 		if (ftell(tableContent) == 0) {
