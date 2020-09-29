@@ -36,11 +36,11 @@ char* createTable(request_t *request) {
 
 	char fileName_2[255] = "database/Table_schema/";
 	strncat(fileName_2, request->table_name, strlen(request->table_name));
-	strcat(fileName_2, "_table_schema.txt");
+	strncat(fileName_2, "_table_schema.txt", strlen("_table_schema.txt"));
 
 	char fileName_3[255] = "database/Table_contents/";
 	strncat(fileName_3, request->table_name, strlen(request->table_name));
-	strcat(fileName_3, "_table_contents.txt");
+	strncat(fileName_3, "_table_contents.txt", strlen("_table_contents.txt"));
 	
 	if(fileExists(fileName_2) == 0) { //Check if the file exists
 
@@ -97,7 +97,7 @@ char* insert(request_t *request) {
 	FILE* tableContent;
 	char fileName[255] = "database/Table_contents/";
 	strncat(fileName, request->table_name, strlen(request->table_name));
-	strcat(fileName, "_table_contents.txt");
+	strncat(fileName, "_table_contents.txt", strlen("_table_contents.txt"));
 
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
@@ -109,7 +109,6 @@ char* insert(request_t *request) {
 		lock.l_type = F_WRLCK;
 		int lock1 = fcntl(fileno(tableContent), F_SETLK, &lock);
 			if(lock1 != -1) {
-				sleep(5);
 				column_t *current = request->columns; 
 				//Loop through all columns and add column name and type + char_size	
 				while(current != NULL) {
@@ -143,7 +142,7 @@ char* selectValues(request_t *request) {
 
 	char fileName[255] = "database/Table_contents/";
 	strncat(fileName, request->table_name, strlen(request->table_name));
-	strcat(fileName, "_table_contents.txt");
+	strncat(fileName, "_table_contents.txt", strlen("_table_contents.txt"));
 
 	if(fileExists(fileName) == 1) {
 		tableContent = fopen(fileName, "r");
@@ -200,11 +199,11 @@ char* dropTable(request_t *request) {
 			if(found == 1){
 				char first[255] = "database/Table_contents/";
 				strncat(first, request->table_name, strlen(request->table_name));
-				strcat(first, "_table_contents.txt");
+				strncat(first, "_table_contents.txt", strlen("_table_contents.txt"));
 
 				char second[255] = "database/Table_schema/";
 				strncat(second, request->table_name, strlen(request->table_name));
-				strcat(second, "_table_schema.txt");
+				strncat(second, "_table_schema.txt", strlen("_table_schema.txt"));
 
 				remove(first);
 				remove(second);
