@@ -235,7 +235,7 @@ char* allTables() {
 	if (fileExists(fileName) == 1) {
 		FILE* allTables = fopen(fileName, "r");
 		while(fgets(line, sizeof(line), allTables) != NULL){ // read each line of the provided file in the file variable
-				strcat(ret, line);
+				strncat(ret, line, sizeof(line));
 			}	
 		fseek(allTables, 0, SEEK_END);
 		if (ftell(allTables) == 0) {
@@ -265,7 +265,7 @@ char* tableSchema(request_t *request) {
 		}
 		fclose(tableSchema);
 	} else {
-		strcat(ret, "Table does not exist\n");
+		strncat(ret, "Table does not exist\n");
 	}
 
 	return ret;
