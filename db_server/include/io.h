@@ -32,7 +32,7 @@ char* createTable(request_t *request) {
 	char* checkEmpty = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
 	
-	char fileName[255] = "database/all_tables.txt";
+	char* fileName = "database/all_tables.txt";
 
 	char fileName_2[255] = "database/Table_schema/";
 	strncat(fileName_2, request->table_name, strlen(request->table_name));
