@@ -206,9 +206,6 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
-
-	shutdown(serverSocket, SHUT_RDWR);
-	close(serverSocket);
 	exit(0);
 }
 

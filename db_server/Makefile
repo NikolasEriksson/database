@@ -16,7 +16,7 @@ RM = /bin/rm
 
 
 all:
-	@echo "choose target: [static | shared]"
+	@echo "choose target: server | clean"
 
 
 shared: $(SHARED)
