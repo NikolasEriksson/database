@@ -19,30 +19,36 @@
 #define DIE(str) perror(str);exit(-1);
 #define BUFSIZE 255
 
-//int counter = 0;
+int serverSocket; // global server socket since we shut it down using a sighandler
+int clientSocket; // global client socket since we shut it down using a sighandler (if needed)
+
 // when child terminates the parent gets signal and call this function to terminate the process
 void sighandler(){ 
 	while(waitpid(-1, NULL, WNOHANG) > 0){ // -1 = wait for any child, WNOHANG = don't block if the state isn't changed (man waitpid)
 		continue;
 	}
 	puts("Child process terminated");
-	//counter--;
-	//printf("counter: %i\n", counter);
-	/*sleep(2);
-	if(counter == 0) {
-		puts("terminate parent");
-		exit(0);	
-	}*/
 }
 
-
+// when the server gets interrupted <ctrl+c> we shut the main socket down and exit the process
+void interrupthandler(){
+	if(shutdown(serverSocket, SHUT_RDWR) != 0){ // if the server couldn't be shut down
+		if(shutdown(clientSocket, SHUT_RDWR) == 0){ // try to shutdown the client, if it works
+			close(clientSocket);  // close clientsocket
+			shutdown(serverSocket, SHUT_RDWR); // shutdown serversocket again
+			close(serverSocket); // close serversocket
+		}
+	}else{
+		close(serverSocket); // if the serversocket could be shut down, close it
+	}
+	exit(0);
+}
 
 
 int main(int argc, char* argv[]) {
 	int portnumber = 1337; // default port
 	struct sockaddr_in sin, pin;
-	int serverSocket; 
-	int clientSocket;
+	//int clientSocket;
 	int addrlen;
 	char buf[BUFSIZE];
 	pid_t pid;
@@ -59,14 +65,17 @@ int main(int argc, char* argv[]) {
 			puts("-h print help text.");
 			puts("-p listen to port number <port>.");
 			exit(0);
-			//puts("-d run as a daemon.\n");
-			//puts("-l logfile, log to logfile. If unspecified, logging will be output to syslog.\n");
 		}else if(strcmp(argv[i], "-p") == 0){
 			if(argv[i+1] != NULL) portnumber = atoi(argv[i+1]);
 			else{
 				printf("Usage: %s -p <port>\n", argv[0]);
 				exit(0);
 			}
+		}else if(strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "-s") == 0){
+			printf("Usage: %s -p <port>\n", argv[0]);
+			puts("-h print help text.");
+			puts("-p listen to port number <port>.");
+			exit(3);
 		}
 	}
 
@@ -79,10 +88,12 @@ int main(int argc, char* argv[]) {
 	if((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		DIE("socket");
 	}
-
+	
+	/* set the port to be reusable, this just means that even if the port is busy we can reuse it anyway. if the port
+	   is busy but with another state, we will still get the address already in use error. */
 	int option = 1;
 	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
-
+	
         /* zero out the sockaddr_in struct */
 	memset(&sin, 0, sizeof(sin));
         /* setup the struct to inform the operating system that we would like
@@ -102,15 +113,17 @@ int main(int argc, char* argv[]) {
 	addrlen = sizeof(pin);
 
 	signal(SIGCHLD, sighandler);
+	signal(SIGINT, interrupthandler);
 
 	while(1){
 		// accept connection
 		clientSocket = accept(serverSocket, (struct sockaddr*) &pin, (socklen_t*) &addrlen);
-		//counter++;
+
 		// clean the buffer, strange chars will appear in the server console otherwise.
 		memset(buf, 0, sizeof buf);
-
 		if((pid = fork()) == -1){ // something went wrong
+			shutdown(clientSocket, SHUT_RDWR);
+			shutdown(serverSocket, SHUT_RDWR);
 			close(clientSocket);
 			close(serverSocket);
 			continue;
@@ -137,8 +150,8 @@ int main(int argc, char* argv[]) {
 				request_t *request;
 				request = parse_request(buf, &error);
 				if(request == NULL){ // if there was an error with the request, tell the client and free the error
-					strcat(error, "\n");
 					send(clientSocket, error, strlen(error) + 1, 0);
+					send(clientSocket, "\n", strlen("\n") + 1, 0);
 					free(error);
 					shutdown(clientSocket, SHUT_RDWR);
 					close(clientSocket);

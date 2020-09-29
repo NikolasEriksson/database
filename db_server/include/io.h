@@ -32,13 +32,13 @@ char* createTable(request_t *request) {
 	char* checkEmpty = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
 	
-	char* fileName = "database/all_tables.txt";
+	char* fileName = "../database/all_tables.txt";
 
-	char fileName_2[255] = "database/Table_schema/";
+	char fileName_2[255] = "../database/Table_schema/";
 	strncat(fileName_2, request->table_name, strlen(request->table_name));
 	strncat(fileName_2, "_table_schema.txt", strlen("_table_schema.txt"));
 
-	char fileName_3[255] = "database/Table_contents/";
+	char fileName_3[255] = "../database/Table_contents/";
 	strncat(fileName_3, request->table_name, strlen(request->table_name));
 	strncat(fileName_3, "_table_contents.txt", strlen("_table_contents.txt"));
 	
@@ -95,7 +95,7 @@ char* createTable(request_t *request) {
 
 char* insert(request_t *request) {
 	FILE* tableContent;
-	char fileName[255] = "database/Table_contents/";
+	char fileName[255] = "../database/Table_contents/";
 	strncat(fileName, request->table_name, strlen(request->table_name));
 	strncat(fileName, "_table_contents.txt", strlen("_table_contents.txt"));
 
@@ -140,7 +140,7 @@ char* selectValues(request_t *request) {
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
 
-	char fileName[255] = "database/Table_contents/";
+	char fileName[255] = "../database/Table_contents/";
 	strncat(fileName, request->table_name, strlen(request->table_name));
 	strncat(fileName, "_table_contents.txt", strlen("_table_contents.txt"));
 
@@ -162,8 +162,8 @@ char* selectValues(request_t *request) {
 
 
 char* dropTable(request_t *request) {
-	char* fileName = "database/all_tables.txt";
-	char* tempFileName = "database/all_tables_temp.txt";
+	char* fileName = "../database/all_tables.txt";
+	char* tempFileName = "../database/all_tables_temp.txt";
 
 	FILE* allTables;
 	FILE* tempFile;
@@ -197,11 +197,11 @@ char* dropTable(request_t *request) {
 			}
 	
 			if(found == 1){
-				char first[255] = "database/Table_contents/";
+				char first[255] = "../database/Table_contents/";
 				strncat(first, request->table_name, strlen(request->table_name));
 				strncat(first, "_table_contents.txt", strlen("_table_contents.txt"));
 
-				char second[255] = "database/Table_schema/";
+				char second[255] = "../database/Table_schema/";
 				strncat(second, request->table_name, strlen(request->table_name));
 				strncat(second, "_table_schema.txt", strlen("_table_schema.txt"));
 
@@ -227,7 +227,7 @@ char* dropTable(request_t *request) {
 }
 
 char* allTables() {
-	char* fileName = "database/all_tables.txt";
+	char* fileName = "../database/all_tables.txt";
 	char line[255];
 	char* ret = malloc(sizeof(char)*255);
 	memset(ret, 0, sizeof ret);
@@ -251,7 +251,7 @@ char* allTables() {
 
 
 char* tableSchema(request_t *request) {
-	char fileName[255] = "database/Table_schema/";
+	char fileName[255] = "../database/Table_schema/";
 	strncat(fileName, request->table_name, strlen(request->table_name));
 	strncat(fileName, "_table_schema.txt", strlen("_table_schema.txt"));
 	char line[255];
@@ -265,7 +265,7 @@ char* tableSchema(request_t *request) {
 		}
 		fclose(tableSchema);
 	} else {
-		strncat(ret, "Table does not exist\n");
+		strcat(ret, "Table does not exist\n");
 	}
 
 	return ret;

@@ -1,2 +1,0 @@
-# this needs to be manually written into each new console in order to make the program find librequest.so
-export LD_LIBRARY_PATH=/home/seclab/Desktop/project/db_server/lib:$LD_LIBRARY_PATH
