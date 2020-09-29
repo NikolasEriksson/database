@@ -35,11 +35,11 @@ char* createTable(request_t *request) {
 	char fileName[255] = "database/all_tables.txt";
 
 	char fileName_2[255] = "database/Table_schema/";
-	strcat(fileName_2, request->table_name);
+	strncat(fileName_2, request->table_name, strlen(request->table_name));
 	strcat(fileName_2, "_table_schema.txt");
 
 	char fileName_3[255] = "database/Table_contents/";
-	strcat(fileName_3, request->table_name);
+	strncat(fileName_3, request->table_name, strlen(request->table_name));
 	strcat(fileName_3, "_table_contents.txt");
 	
 	if(fileExists(fileName_2) == 0) { //Check if the file exists
@@ -96,7 +96,7 @@ char* createTable(request_t *request) {
 char* insert(request_t *request) {
 	FILE* tableContent;
 	char fileName[255] = "database/Table_contents/";
-	strcat(fileName, request->table_name);
+	strncat(fileName, request->table_name, strlen(request->table_name));
 	strcat(fileName, "_table_contents.txt");
 
 	char* ret = malloc(sizeof(char)*255);
@@ -142,7 +142,7 @@ char* selectValues(request_t *request) {
 	memset(ret, 0, sizeof ret); // memset the ret string, it will contain weird chars in ret[0] otherwise
 
 	char fileName[255] = "database/Table_contents/";
-	strcat(fileName, request->table_name);
+	strncat(fileName, request->table_name, strlen(request->table_name));
 	strcat(fileName, "_table_contents.txt");
 
 	if(fileExists(fileName) == 1) {
@@ -199,11 +199,11 @@ char* dropTable(request_t *request) {
 	
 			if(found == 1){
 				char first[255] = "database/Table_contents/";
-				strcat(first, request->table_name);
+				strncat(first, request->table_name, strlen(request->table_name));
 				strcat(first, "_table_contents.txt");
 
 				char second[255] = "database/Table_schema/";
-				strcat(second, request->table_name);
+				strncat(second, request->table_name, strlen(request->table_name));
 				strcat(second, "_table_schema.txt");
 
 				remove(first);
